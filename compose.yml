@@ -1,0 +1,10 @@
+services:
+  design-system:
+    build: design-system
+
+  website:
+    build: website
+    ports:
+      - "3736:5173"
+    depends_on:
+      - design-system

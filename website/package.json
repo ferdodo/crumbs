@@ -1,0 +1,17 @@
+{
+	"scripts": {
+		"build": "biome ci . && tsc && vite build",
+		"start": "vite --host"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^1.8.2",
+		"crumbs-design-system": "file:../design-system",
+		"goober": "^2.1.14",
+		"htm": "^3.1.1",
+		"preact": "^10.22.0",
+		"preact-observable-hooks": "^0.0.1",
+		"rxjs": "^7.8.1",
+		"typescript": "^5.4.5",
+		"vite": "^5.3.1"
+	}
+}

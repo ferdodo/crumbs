@@ -1,0 +1,22 @@
+{
+	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"complexity": {
+				"useArrowFunction": "off"
+			}
+		}
+	},
+	"javascript": {
+		"formatter": {
+			"trailingCommas": "none"
+		}
+	},
+	"formatter": {
+		"enabled": true
+	},
+	"organizeImports": {
+		"enabled": true
+	}
+}
