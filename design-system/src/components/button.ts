@@ -23,6 +23,7 @@ const template = createTemplate(html`
 		/* ❤️ https://codepen.io/yuhomyan/pen/OJMejWJ */
 
 		.custom-btn {
+			border: none;
 			font-family: ds-notes-sans;
 			font-size: 1rem;
 			display: grid;
@@ -50,7 +51,6 @@ const template = createTemplate(html`
 
 		.btn-16 {
 			border: none;
-			color: #000;
 		}
 		.btn-16:after {
 			position: absolute;
@@ -67,7 +67,6 @@ const template = createTemplate(html`
 			background-color: #fff3;
 		}
 		.btn-16:hover {
-			color: #000;
 		}
 		.btn-16:hover:after {
 			left: auto;
@@ -96,12 +95,17 @@ const template = createTemplate(html`
 			transition: width 0.3s ease-in-out;
 		}
 
+		button {
+			background-color: transparent;
+			padding: 0;
+			border: none;
+		}
 	</style>
 
 	<div className="button-container">
-		<div className="custom-btn btn-16">
+		<button disabled className="custom-btn btn-16">
 			<slot></slot>
-		</div>
+		</button>
 		<div className="progress-container">
 			<div id="progress"></div>
 		</div>
@@ -111,9 +115,10 @@ const template = createTemplate(html`
 class Button extends HTMLElement {
 	clickSubscription: Subscription | null = null;
 	_progress = "0";
+	_disabled = false;
 
 	static get observedAttributes() {
-		return ["progress"];
+		return ["progress", "disabled"];
 	}
 
 	async connectedCallback() {
@@ -127,6 +132,11 @@ class Button extends HTMLElement {
 	attributeChangedCallback() {
 		if (this.shadowRoot) {
 			const progress: string | null = this.getAttribute("progress");
+			const disabled: string | null = this.getAttribute("disabled");
+
+			this._disabled =
+				(disabled !== null && disabled !== "false") ||
+				(progress !== null && progress !== "100");
 
 			if (isProgressValid(progress)) {
 				this._progress = progress === null ? "0" : progress;
@@ -139,6 +149,12 @@ class Button extends HTMLElement {
 	render() {
 		const shadowRoot = getShadowRoot(this);
 		const progress = getElement(shadowRoot, "#progress");
+		const button = getElement(shadowRoot, "button");
+
+		if (button instanceof HTMLButtonElement) {
+			button.disabled = this._disabled;
+		}
+
 		progress.style.width = `${this._progress}%`;
 	}
 
