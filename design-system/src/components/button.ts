@@ -1,6 +1,19 @@
 import htm from "htm";
 import h from "hyperscript";
-import type { Subscription } from "rxjs";
+import type { Observable, Subscription } from "rxjs";
+
+import {
+	Subject,
+	combineLatest,
+	filter,
+	interval,
+	map,
+	mergeMap,
+	of,
+	pairwise,
+	startWith
+} from "rxjs";
+
 import { createTemplate, getElement, getShadowRoot } from "../utils";
 
 const html = htm.bind(h);
@@ -13,6 +26,186 @@ declare global {
 		}
 	}
 }
+
+class Button extends HTMLElement {
+	clickSubscription: Subscription | null = null;
+	_progress = "0";
+	_indeterminate_progress = false;
+	_indeterminate_duration_ms = 0;
+	_disabled = false;
+	_progressSubject = new Subject<string | null>();
+	_disabledSubject = new Subject<string | null>();
+	_indeterminateProgressSubject = new Subject<string | null>();
+	_indeterminateDurationMsSubject = new Subject<string | null>();
+
+	static get observedAttributes() {
+		return [
+			"progress",
+			"disabled",
+			"indeterminate-progress",
+			"indeterminate-duration-ms"
+		];
+	}
+
+	async connectedCallback() {
+		this.attachShadow({ mode: "open" });
+		const shadowRoot = getShadowRoot(this);
+		this._progress = this.getAttribute("progress") || "0";
+		shadowRoot.appendChild(template.content.cloneNode(true));
+		this.render();
+	}
+
+	attributeChangedCallback(name: string) {
+		if (this.shadowRoot) {
+			const progress: string | null = this.getAttribute("progress");
+			const disabled: string | null = this.getAttribute("disabled");
+
+			const indeterminateProgress: string | null = this.getAttribute(
+				"indeterminate-progress"
+			);
+
+			this._indeterminate_progress =
+				indeterminateProgress !== null && indeterminateProgress !== "false";
+
+			const indeterminateDurationMs: string | null = this.getAttribute(
+				"indeterminate-duration-ms"
+			);
+
+			this._indeterminate_duration_ms =
+				Number.isInteger(Number(indeterminateDurationMs)) &&
+				Number.isFinite(Number(indeterminateDurationMs))
+					? Number(indeterminateDurationMs)
+					: 0;
+
+			this._disabled =
+				(disabled !== null && disabled !== "false") ||
+				(progress !== null && progress !== "100");
+
+			if (isProgressValid(progress)) {
+				this._progress = progress === null ? "0" : progress;
+			}
+
+			this.render();
+
+			switch (name) {
+				case "progress":
+					this._progressSubject.next(this.getAttribute("progress"));
+					break;
+				case "disabled":
+					this._disabledSubject.next(this.getAttribute("disabled"));
+					break;
+				case "indeterminate-progress":
+					this._indeterminateProgressSubject.next(
+						this.getAttribute("indeterminate-progress")
+					);
+					break;
+				case "indeterminate-duration-ms":
+					this._indeterminateDurationMsSubject.next(
+						this.getAttribute("indeterminate-duration-ms")
+					);
+					break;
+				default:
+					throw new Error("Unknown attribute !");
+			}
+		}
+	}
+
+	render() {
+		const shadowRoot = getShadowRoot(this);
+		const progress = getElement(shadowRoot, "#progress");
+		const button = getElement(shadowRoot, "button");
+
+		if (button instanceof HTMLButtonElement) {
+			button.disabled = this._disabled;
+		}
+
+		progress.style.width = `${this._progress}%`;
+	}
+
+	disconnectedCallback() {
+		this.clickSubscription?.unsubscribe();
+	}
+
+	observeLastIndeterminedLoadingTime(): Observable<number> {
+		return this._indeterminateProgressSubject.pipe(
+			startWith(null),
+			map((value) => value !== null && value !== "false"),
+			pairwise(),
+			filter(([previous, current]) => current && !previous),
+			map(() => Date.now())
+		);
+	}
+
+	observeLoading(): Observable<string> {
+		return combineLatest(
+			this._progressSubject.pipe(startWith(null)),
+			this.observeLastIndeterminedLoadingTime(),
+			this._indeterminateDurationMsSubject.pipe(startWith(null)),
+			this._indeterminateProgressSubject.pipe(startWith(null))
+		).pipe(
+			mergeMap(
+				([
+					progress,
+					lastIndeterminedLoadingTime,
+					indeterminateDurationMs,
+					indeterminateProgress
+				]) => {
+					if (
+						indeterminateProgress !== null &&
+						indeterminateProgress !== "false"
+					) {
+						if (
+							lastIndeterminedLoadingTime !== null &&
+							Number.isFinite(Number(lastIndeterminedLoadingTime)) &&
+							Number.isInteger(Number(lastIndeterminedLoadingTime)) &&
+							lastIndeterminedLoadingTime !== null
+						) {
+							return interval(100).pipe(
+								map(() => {
+									const now = Date.now();
+									const duration = now - lastIndeterminedLoadingTime;
+
+									return String(
+										Math.ceil(
+											Math.min(100, duration / Number(indeterminateDurationMs))
+										)
+									);
+								})
+							);
+						}
+
+						return of("0");
+					}
+
+					if (isProgressValid(progress)) {
+						return of(progress || "0");
+					}
+
+					return of("100");
+				}
+			)
+		);
+	}
+}
+
+function isProgressValid(progress: string | null): boolean {
+	if (progress === null) {
+		return true;
+	}
+
+	const progressAsNumber: number = Number(progress);
+	const rounded: number = Math.floor(progressAsNumber);
+
+	return (
+		rounded === progressAsNumber &&
+		Number.isInteger(rounded) &&
+		Number.isFinite(rounded) &&
+		rounded <= 100 &&
+		rounded >= 0
+	);
+}
+
+customElements.define(tagName, Button);
 
 const template = createTemplate(html`
 	<style>
@@ -32,7 +225,6 @@ const template = createTemplate(html`
 			padding: 10px 25px;
 			font-weight: 500;
 			background: transparent;
-			cursor: pointer;
 			transition: all 0.3s ease;
 			position: relative;
 			box-shadow:inset 2px 2px 2px 0px rgba(255,255,255,.5),
@@ -41,6 +233,19 @@ const template = createTemplate(html`
 			outline: none;
 			grid-area: 2 / 2 / 3 / 3;
 			user-select: none;
+		}
+
+		.indeterminate-loading {
+			animation: transparency-fade 1.5s ease-in-out infinite;
+		}
+
+		@keyframes transparency-fade {
+			0%, 100% {
+				background-color: transparent;
+			}
+			50% {
+				background-color: rgba(255, 255, 255, 1);
+			}
 		}
 
 		@media screen and (min-width: 800px) {
@@ -111,73 +316,3 @@ const template = createTemplate(html`
 		</div>
 	</div>
 `);
-
-class Button extends HTMLElement {
-	clickSubscription: Subscription | null = null;
-	_progress = "0";
-	_disabled = false;
-
-	static get observedAttributes() {
-		return ["progress", "disabled"];
-	}
-
-	async connectedCallback() {
-		this.attachShadow({ mode: "open" });
-		const shadowRoot = getShadowRoot(this);
-		this._progress = this.getAttribute("progress") || "0";
-		shadowRoot.appendChild(template.content.cloneNode(true));
-		this.render();
-	}
-
-	attributeChangedCallback() {
-		if (this.shadowRoot) {
-			const progress: string | null = this.getAttribute("progress");
-			const disabled: string | null = this.getAttribute("disabled");
-
-			this._disabled =
-				(disabled !== null && disabled !== "false") ||
-				(progress !== null && progress !== "100");
-
-			if (isProgressValid(progress)) {
-				this._progress = progress === null ? "0" : progress;
-			}
-
-			this.render();
-		}
-	}
-
-	render() {
-		const shadowRoot = getShadowRoot(this);
-		const progress = getElement(shadowRoot, "#progress");
-		const button = getElement(shadowRoot, "button");
-
-		if (button instanceof HTMLButtonElement) {
-			button.disabled = this._disabled;
-		}
-
-		progress.style.width = `${this._progress}%`;
-	}
-
-	disconnectedCallback() {
-		this.clickSubscription?.unsubscribe();
-	}
-}
-
-function isProgressValid(progress: string | null): boolean {
-	if (progress === null) {
-		return true;
-	}
-
-	const progressAsNumber: number = Number(progress);
-	const rounded: number = Math.floor(progressAsNumber);
-
-	return (
-		rounded === progressAsNumber &&
-		Number.isInteger(rounded) &&
-		Number.isFinite(rounded) &&
-		rounded <= 100 &&
-		rounded >= 0
-	);
-}
-
-customElements.define(tagName, Button);
