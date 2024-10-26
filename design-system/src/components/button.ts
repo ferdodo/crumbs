@@ -18,6 +18,7 @@ import { createTemplate, getElement, getShadowRoot } from "../utils";
 
 const html = htm.bind(h);
 const tagName = "crumbs-button";
+const indeterminateMinimumMs = 600;
 
 declare global {
 	export namespace JSX {
@@ -28,15 +29,142 @@ declare global {
 }
 
 class Button extends HTMLElement {
-	clickSubscription: Subscription | null = null;
-	_progress = "0";
-	_indeterminate_progress = false;
-	_indeterminate_duration_ms = 0;
-	_disabled = false;
-	_progressSubject = new Subject<string | null>();
-	_disabledSubject = new Subject<string | null>();
-	_indeterminateProgressSubject = new Subject<string | null>();
-	_indeterminateDurationMsSubject = new Subject<string | null>();
+	_renderSubscription: Subscription | null = null;
+	_clickSubscription: Subscription | null = null;
+	_attributeChanges$: Subject<[string, string | null]> = new Subject();
+	_parsedProgress$: Observable<number | null>;
+	_parsedDisabled$: Observable<boolean>;
+	_parsedIndeterminateProgress$: Observable<boolean>;
+	_parsedIndeterminateDurationMs$: Observable<number | null>;
+	_indeterminedLoadingAt$: Observable<number>;
+	_loading$: Observable<number>;
+	_activeIndeterminateProgress$: Observable<boolean>;
+	_disabled$: Observable<boolean>;
+
+	constructor() {
+		super();
+
+		this._parsedProgress$ = this._attributeChanges$.pipe(
+			filter(([name]) => name === "progress"),
+			map(([_, value]) => value),
+			startWith(this.getAttribute("progress")),
+			map((progress) => (progress === null ? null : Number(progress))),
+			filter((progress) => {
+				return (
+					progress === null ||
+					(Number.isInteger(progress) &&
+						Number.isFinite(progress) &&
+						progress <= 100 &&
+						progress >= 0)
+				);
+			})
+		);
+
+		this._parsedDisabled$ = this._attributeChanges$.pipe(
+			filter(([name]) => name === "disabled"),
+			map(([_, value]) => value),
+			startWith(this.getAttribute("disabled")),
+			map((disabled) => disabled !== null && disabled !== "false")
+		);
+
+		this._parsedIndeterminateProgress$ = this._attributeChanges$.pipe(
+			filter(([name]) => name === "indeterminate-progress"),
+			map(([_, value]) => value),
+			startWith(this.getAttribute("indeterminate-progress")),
+			map(
+				(indeterminateProgress) =>
+					indeterminateProgress !== null && indeterminateProgress !== "false"
+			)
+		);
+
+		this._parsedIndeterminateDurationMs$ = this._attributeChanges$.pipe(
+			filter(([name]) => name === "indeterminate-duration-ms"),
+			map(([_, value]) => value),
+			startWith(this.getAttribute("indeterminate-duration-ms")),
+			map((indeterminateDurationMs) => {
+				return indeterminateDurationMs !== null
+					? null
+					: Number(indeterminateDurationMs);
+			}),
+			filter((indeterminateDurationMs) => {
+				return (
+					indeterminateDurationMs === null ||
+					(Number.isInteger(indeterminateDurationMs) &&
+						Number.isFinite(indeterminateDurationMs) &&
+						indeterminateDurationMs >= 0)
+				);
+			})
+		);
+
+		this._indeterminedLoadingAt$ = this._parsedIndeterminateProgress$.pipe(
+			startWith(false),
+			pairwise(),
+			filter(([previous, current]) => current && !previous),
+			map(() => Date.now()),
+			startWith(0)
+		);
+
+		this._loading$ = combineLatest(
+			this._parsedProgress$,
+			this._indeterminedLoadingAt$,
+			this._parsedIndeterminateDurationMs$,
+			this._parsedIndeterminateProgress$
+		).pipe(
+			mergeMap(
+				([
+					progress,
+					indeterminedLoadingAt,
+					indeterminateDurationMs,
+					indeterminateProgress
+				]) => {
+					if (indeterminateProgress) {
+						if (indeterminedLoadingAt && indeterminateDurationMs !== null) {
+							return interval(100).pipe(
+								map(() => {
+									const now = Date.now();
+									const duration = now - indeterminedLoadingAt;
+
+									const totalDuration =
+										indeterminateDurationMs - indeterminateMinimumMs;
+
+									const totalDuration1 = Math.max(totalDuration, 0);
+									const progress = Math.ceil((duration / totalDuration1) * 100);
+									return Math.min(100, progress);
+								})
+							);
+						}
+
+						return of(0);
+					}
+
+					return of(progress || 0);
+				}
+			)
+		);
+
+		this._activeIndeterminateProgress$ = combineLatest(
+			this._parsedIndeterminateProgress$,
+			this._loading$
+		).pipe(
+			map(([indeterminateProgress, progress]) => {
+				return indeterminateProgress && progress === 100;
+			})
+		);
+
+		this._disabled$ = combineLatest(
+			this._parsedDisabled$,
+			this._activeIndeterminateProgress$,
+			this._loading$
+		).pipe(
+			map(([disabled, activeIndeterminateProgress, loading]) => {
+				return (
+					disabled ||
+					activeIndeterminateProgress ||
+					(loading > 0 && loading < 100)
+				);
+			})
+		);
+	}
 
 	static get observedAttributes() {
 		return [
@@ -50,159 +178,38 @@ class Button extends HTMLElement {
 	async connectedCallback() {
 		this.attachShadow({ mode: "open" });
 		const shadowRoot = getShadowRoot(this);
-		this._progress = this.getAttribute("progress") || "0";
 		shadowRoot.appendChild(template.content.cloneNode(true));
-		this.render();
+
+		this._renderSubscription = combineLatest(
+			this._disabled$,
+			this._loading$
+		).subscribe(([disabled, progressValue]) => {
+			this.render(disabled, Number(progressValue));
+		});
 	}
 
 	attributeChangedCallback(name: string) {
 		if (this.shadowRoot) {
-			const progress: string | null = this.getAttribute("progress");
-			const disabled: string | null = this.getAttribute("disabled");
-
-			const indeterminateProgress: string | null = this.getAttribute(
-				"indeterminate-progress"
-			);
-
-			this._indeterminate_progress =
-				indeterminateProgress !== null && indeterminateProgress !== "false";
-
-			const indeterminateDurationMs: string | null = this.getAttribute(
-				"indeterminate-duration-ms"
-			);
-
-			this._indeterminate_duration_ms =
-				Number.isInteger(Number(indeterminateDurationMs)) &&
-				Number.isFinite(Number(indeterminateDurationMs))
-					? Number(indeterminateDurationMs)
-					: 0;
-
-			this._disabled =
-				(disabled !== null && disabled !== "false") ||
-				(progress !== null && progress !== "100");
-
-			if (isProgressValid(progress)) {
-				this._progress = progress === null ? "0" : progress;
-			}
-
-			this.render();
-
-			switch (name) {
-				case "progress":
-					this._progressSubject.next(this.getAttribute("progress"));
-					break;
-				case "disabled":
-					this._disabledSubject.next(this.getAttribute("disabled"));
-					break;
-				case "indeterminate-progress":
-					this._indeterminateProgressSubject.next(
-						this.getAttribute("indeterminate-progress")
-					);
-					break;
-				case "indeterminate-duration-ms":
-					this._indeterminateDurationMsSubject.next(
-						this.getAttribute("indeterminate-duration-ms")
-					);
-					break;
-				default:
-					throw new Error("Unknown attribute !");
-			}
+			this._attributeChanges$.next([name, this.getAttribute(name)]);
 		}
 	}
 
-	render() {
+	render(disabled: boolean, progressValue: number) {
 		const shadowRoot = getShadowRoot(this);
 		const progress = getElement(shadowRoot, "#progress");
 		const button = getElement(shadowRoot, "button");
 
 		if (button instanceof HTMLButtonElement) {
-			button.disabled = this._disabled;
+			button.disabled = disabled;
 		}
 
-		progress.style.width = `${this._progress}%`;
+		progress.style.width = `${progressValue}%`;
 	}
 
 	disconnectedCallback() {
-		this.clickSubscription?.unsubscribe();
+		this._clickSubscription?.unsubscribe();
+		this._renderSubscription?.unsubscribe();
 	}
-
-	observeLastIndeterminedLoadingTime(): Observable<number> {
-		return this._indeterminateProgressSubject.pipe(
-			startWith(null),
-			map((value) => value !== null && value !== "false"),
-			pairwise(),
-			filter(([previous, current]) => current && !previous),
-			map(() => Date.now())
-		);
-	}
-
-	observeLoading(): Observable<string> {
-		return combineLatest(
-			this._progressSubject.pipe(startWith(null)),
-			this.observeLastIndeterminedLoadingTime(),
-			this._indeterminateDurationMsSubject.pipe(startWith(null)),
-			this._indeterminateProgressSubject.pipe(startWith(null))
-		).pipe(
-			mergeMap(
-				([
-					progress,
-					lastIndeterminedLoadingTime,
-					indeterminateDurationMs,
-					indeterminateProgress
-				]) => {
-					if (
-						indeterminateProgress !== null &&
-						indeterminateProgress !== "false"
-					) {
-						if (
-							lastIndeterminedLoadingTime !== null &&
-							Number.isFinite(Number(lastIndeterminedLoadingTime)) &&
-							Number.isInteger(Number(lastIndeterminedLoadingTime)) &&
-							lastIndeterminedLoadingTime !== null
-						) {
-							return interval(100).pipe(
-								map(() => {
-									const now = Date.now();
-									const duration = now - lastIndeterminedLoadingTime;
-
-									return String(
-										Math.ceil(
-											Math.min(100, duration / Number(indeterminateDurationMs))
-										)
-									);
-								})
-							);
-						}
-
-						return of("0");
-					}
-
-					if (isProgressValid(progress)) {
-						return of(progress || "0");
-					}
-
-					return of("100");
-				}
-			)
-		);
-	}
-}
-
-function isProgressValid(progress: string | null): boolean {
-	if (progress === null) {
-		return true;
-	}
-
-	const progressAsNumber: number = Number(progress);
-	const rounded: number = Math.floor(progressAsNumber);
-
-	return (
-		rounded === progressAsNumber &&
-		Number.isInteger(rounded) &&
-		Number.isFinite(rounded) &&
-		rounded <= 100 &&
-		rounded >= 0
-	);
 }
 
 customElements.define(tagName, Button);
