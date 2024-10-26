@@ -11,7 +11,8 @@ import {
 	mergeMap,
 	of,
 	pairwise,
-	startWith
+	startWith,
+	takeWhile
 } from "rxjs";
 
 import { createTemplate, getElement, getShadowRoot } from "../utils";
@@ -82,7 +83,7 @@ class Button extends HTMLElement {
 			map(([_, value]) => value),
 			startWith(this.getAttribute("indeterminate-duration-ms")),
 			map((indeterminateDurationMs) => {
-				return indeterminateDurationMs !== null
+				return indeterminateDurationMs === null
 					? null
 					: Number(indeterminateDurationMs);
 			}),
@@ -125,12 +126,13 @@ class Button extends HTMLElement {
 									const duration = now - indeterminedLoadingAt;
 
 									const totalDuration =
-										indeterminateDurationMs - indeterminateMinimumMs;
+										indeterminateMinimumMs - indeterminateDurationMs;
 
 									const totalDuration1 = Math.max(totalDuration, 0);
 									const progress = Math.ceil((duration / totalDuration1) * 100);
 									return Math.min(100, progress);
-								})
+								}),
+								takeWhile((progress) => progress < 100, true)
 							);
 						}
 
@@ -164,6 +166,31 @@ class Button extends HTMLElement {
 				);
 			})
 		);
+
+		// debugging
+
+		this._parsedProgress$.subscribe((value) =>
+			console.log("parsedProgress", value)
+		);
+
+		this._parsedDisabled$.subscribe((value) =>
+			console.log("parsedDisabled", value)
+		);
+
+		this._parsedIndeterminateProgress$.subscribe((value) =>
+			console.log("parsedIndeterminateProgress", value)
+		);
+		this._parsedIndeterminateDurationMs$.subscribe((value) =>
+			console.log("parsedIndeterminateDurationMs", value)
+		);
+		this._indeterminedLoadingAt$.subscribe((value) =>
+			console.log("indeterminedLoadingAt", value)
+		);
+		this._loading$.subscribe((value) => console.log("loading", value));
+		this._activeIndeterminateProgress$.subscribe((value) =>
+			console.log("activeIndeterminateProgress", value)
+		);
+		this._disabled$.subscribe((value) => console.log("disabled", value));
 	}
 
 	static get observedAttributes() {
@@ -182,9 +209,10 @@ class Button extends HTMLElement {
 
 		this._renderSubscription = combineLatest(
 			this._disabled$,
-			this._loading$
-		).subscribe(([disabled, progressValue]) => {
-			this.render(disabled, Number(progressValue));
+			this._loading$,
+			this._activeIndeterminateProgress$
+		).subscribe(([disabled, progressValue, indeterminateProgress]) => {
+			this.render(disabled, Number(progressValue), indeterminateProgress);
 		});
 	}
 
@@ -194,13 +222,23 @@ class Button extends HTMLElement {
 		}
 	}
 
-	render(disabled: boolean, progressValue: number) {
+	render(
+		disabled: boolean,
+		progressValue: number,
+		indeterminateLoading: boolean
+	) {
 		const shadowRoot = getShadowRoot(this);
 		const progress = getElement(shadowRoot, "#progress");
 		const button = getElement(shadowRoot, "button");
 
 		if (button instanceof HTMLButtonElement) {
 			button.disabled = disabled;
+		}
+
+		if (indeterminateLoading) {
+			button.classList.add("indeterminate-loading");
+		} else {
+			button.classList.remove("indeterminate-loading");
 		}
 
 		progress.style.width = `${progressValue}%`;

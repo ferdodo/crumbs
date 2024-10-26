@@ -6,6 +6,9 @@ export function DemoButton() {
 	const [content, setContent] = useState("Click me !");
 	const [progress, setProgress] = useState("100");
 	const [isSimulating, setIsSimulating] = useState(false);
+	const [disabled, setDisabled] = useState(false);
+	const [indeterminate, setIndeterminate] = useState(false);
+	const [indeterminateDuration, setIndeterminateDuration] = useState(2000);
 
 	const simulateProgress = useCallback(async () => {
 		if (isSimulating) return;
@@ -32,7 +35,15 @@ export function DemoButton() {
 
 	return html`
 		<${Demo} title="Button">
-			<crumbs-button progress=${progress} loading=${progress} data-testid=${progress}> ${content} </crumbs-button>
+			<crumbs-button
+				progress=${progress}
+				loading=${progress}
+				disabled=${disabled}
+				indeterminate-progress=${indeterminate}
+				indeterminate-duration-ms=${indeterminateDuration}
+				data-testid=${progress}>
+				${content}
+			</crumbs-button>
 
 			<div>
 				<crumbs-input
@@ -52,6 +63,28 @@ export function DemoButton() {
 				<crumbs-button onClick=${handleClick}>
 					Simulate progress
 				</crumbs-button>
+
+				<br/>
+
+				<input type="checkbox" onInput=${() => setDisabled(!disabled)} />
+				<label> Disabled </label>
+
+				<br/>
+
+				<input type="checkbox" onInput=${() => setIndeterminate(!indeterminate)} />
+				<label> Indeterminate loading </label>
+
+				<br/>
+
+				${indeterminateDuration}
+
+				<crumbs-input
+					type="text"
+					value=${indeterminateDuration}
+					onInput=${(e) => setIndeterminateDuration(Number(e.originalTarget.value))}/>
+				<label> Indeterminate loading duration (ms) </label>
+
+
 			</div>
 
 			<code> <pre dangerouslySetInnerHTML=${{ __html: codeTemplate }}> </pre></code>
