@@ -41,6 +41,7 @@ class Button extends HTMLElement {
 	_loading$: Observable<number>;
 	_activeIndeterminateProgress$: Observable<boolean>;
 	_disabled$: Observable<boolean>;
+	_loadingBarTransitionEnabled$: Observable<boolean>;
 
 	constructor() {
 		super();
@@ -167,6 +168,11 @@ class Button extends HTMLElement {
 			})
 		);
 
+		this._loadingBarTransitionEnabled$ = this._loading$.pipe(
+			pairwise(),
+			map(([previous, current]) => current >= previous)
+		);
+
 		// debugging
 
 		this._parsedProgress$.subscribe((value) =>
@@ -191,6 +197,10 @@ class Button extends HTMLElement {
 			console.log("activeIndeterminateProgress", value)
 		);
 		this._disabled$.subscribe((value) => console.log("disabled", value));
+
+		this._loadingBarTransitionEnabled$.subscribe((value) =>
+			console.log("loadingBarTransitionEnabled", value)
+		);
 	}
 
 	static get observedAttributes() {
@@ -210,23 +220,27 @@ class Button extends HTMLElement {
 		this._renderSubscription = combineLatest(
 			this._disabled$,
 			this._loading$,
-			this._activeIndeterminateProgress$
-		).subscribe(([disabled, progressValue, indeterminateProgress]) => {
-			this.render(disabled, Number(progressValue), indeterminateProgress);
+			this._activeIndeterminateProgress$,
+			this._loadingBarTransitionEnabled$
+		).subscribe((args) => {
+			this.render(...args);
 		});
 	}
 
 	attributeChangedCallback(name: string) {
-		if (this.shadowRoot) {
-			this._attributeChanges$.next([name, this.getAttribute(name)]);
-		}
+		this._attributeChanges$.next([name, this.getAttribute(name)]);
 	}
 
 	render(
 		disabled: boolean,
 		progressValue: number,
-		indeterminateLoading: boolean
+		indeterminateLoading: boolean,
+		loadingBarTransitionEnabled: boolean
 	) {
+		if (!this.shadowRoot) {
+			return;
+		}
+
 		const shadowRoot = getShadowRoot(this);
 		const progress = getElement(shadowRoot, "#progress");
 		const button = getElement(shadowRoot, "button");
@@ -239,6 +253,12 @@ class Button extends HTMLElement {
 			button.classList.add("indeterminate-loading");
 		} else {
 			button.classList.remove("indeterminate-loading");
+		}
+
+		if (loadingBarTransitionEnabled) {
+			progress.classList.add("transition");
+		} else {
+			progress.classList.remove("transition");
 		}
 
 		progress.style.width = `${progressValue}%`;
@@ -342,6 +362,9 @@ const template = createTemplate(html`
 			height: 100%;
 			width: 0%;
 			border-radius: 5px;
+		}
+
+		#progress.transition {
 			transition: width 0.3s ease-in-out;
 		}
 
