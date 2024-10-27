@@ -5,6 +5,8 @@ import type { Observable, Subscription } from "rxjs";
 import {
 	Subject,
 	combineLatestWith,
+	concatMap,
+	delay,
 	filter,
 	interval,
 	map,
@@ -20,7 +22,7 @@ import { createTemplate, getElement, getShadowRoot } from "../utils";
 
 const html = htm.bind(h);
 const tagName = "crumbs-button";
-const indeterminateMinimumMs = 600;
+const indeterminateMinimumMs = 1000;
 
 declare global {
 	export namespace JSX {
@@ -120,24 +122,33 @@ class Button extends HTMLElement {
 					indeterminateDurationMs,
 					indeterminateProgress
 				]) => {
+					const isRunningIndeterminateMinimalDuration =
+						indeterminateDurationMs !== null
+							? indeterminateDurationMs - indeterminateMinimumMs >
+								Date.now() - indeterminedLoadingAt
+							: false;
+
+					if (
+						indeterminateDurationMs !== null &&
+						isRunningIndeterminateMinimalDuration
+					) {
+						return interval(100).pipe(
+							map(() => {
+								const now = Date.now();
+								const duration = now - indeterminedLoadingAt;
+
+								const totalDuration =
+									indeterminateDurationMs - indeterminateMinimumMs;
+
+								const totalDuration1 = Math.max(totalDuration, 0);
+								const progress = Math.ceil((duration / totalDuration1) * 100);
+								return Math.min(100, progress);
+							}),
+							takeWhile((progress) => progress < 100, true)
+						);
+					}
+
 					if (indeterminateProgress) {
-						if (indeterminedLoadingAt && indeterminateDurationMs !== null) {
-							return interval(100).pipe(
-								map(() => {
-									const now = Date.now();
-									const duration = now - indeterminedLoadingAt;
-
-									const totalDuration =
-										indeterminateDurationMs - indeterminateMinimumMs;
-
-									const totalDuration1 = Math.max(totalDuration, 0);
-									const progress = Math.ceil((duration / totalDuration1) * 100);
-									return Math.min(100, progress);
-								}),
-								takeWhile((progress) => progress < 100, true)
-							);
-						}
-
 						return of(0);
 					}
 
@@ -149,10 +160,34 @@ class Button extends HTMLElement {
 
 		this._activeIndeterminateProgress$ =
 			this._parsedIndeterminateProgress$.pipe(
-				combineLatestWith(this._loading$),
-				map(([indeterminateProgress, progress]) => {
-					return indeterminateProgress && progress === 100;
-				})
+				combineLatestWith(
+					this._loading$,
+					this._indeterminedLoadingAt$,
+					this._parsedIndeterminateDurationMs$
+				),
+				concatMap(
+					([
+						indeterminateProgress,
+						progress,
+						indeterminedLoadingAt,
+						indeterminateDurationMs
+					]) => {
+						const activeIndeterminateProgress =
+							indeterminateProgress && progress === 100;
+
+						if (!activeIndeterminateProgress) {
+							const timeLeft = indeterminateDurationMs
+								? indeterminateDurationMs - (Date.now() - indeterminedLoadingAt)
+								: 0;
+
+							console.log("timeLeft", timeLeft);
+							return of(activeIndeterminateProgress).pipe(delay(timeLeft));
+						}
+
+						return of(activeIndeterminateProgress);
+					}
+				),
+				share()
 			);
 
 		this._disabled$ = this._parsedDisabled$.pipe(
@@ -253,9 +288,14 @@ class Button extends HTMLElement {
 		}
 
 		if (indeterminateLoading) {
+			button.classList.remove("indeterminate-loading-end");
 			button.classList.add("indeterminate-loading");
 		} else {
-			button.classList.remove("indeterminate-loading");
+			button.classList.add("indeterminate-loading-end");
+
+			setTimeout(() => {
+				button.classList.remove("indeterminate-loading");
+			}, 500);
 		}
 
 		if (loadingBarTransitionEnabled) {
@@ -307,12 +347,19 @@ const template = createTemplate(html`
 			animation: transparency-fade 1.5s ease-in-out infinite;
 		}
 
+		.indeterminate-loading-end {
+			animation-iteration-count: 1;
+		}	
+
 		@keyframes transparency-fade {
-			0%, 100% {
+			0% {
 				background-color: transparent;
 			}
 			50% {
 				background-color: rgba(255, 255, 255, 0.15);
+			}
+			100% {
+				background-color: transparent;
 			}
 		}
 
