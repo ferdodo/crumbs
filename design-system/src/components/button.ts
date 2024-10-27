@@ -4,14 +4,15 @@ import type { Observable, Subscription } from "rxjs";
 
 import {
 	Subject,
-	combineLatest,
+	combineLatestWith,
 	filter,
 	interval,
 	map,
-	mergeMap,
 	of,
 	pairwise,
+	share,
 	startWith,
+	switchMap,
 	takeWhile
 } from "rxjs";
 
@@ -106,13 +107,13 @@ class Button extends HTMLElement {
 			startWith(0)
 		);
 
-		this._loading$ = combineLatest(
-			this._parsedProgress$,
-			this._indeterminedLoadingAt$,
-			this._parsedIndeterminateDurationMs$,
-			this._parsedIndeterminateProgress$
-		).pipe(
-			mergeMap(
+		this._loading$ = this._parsedProgress$.pipe(
+			combineLatestWith(
+				this._indeterminedLoadingAt$,
+				this._parsedIndeterminateDurationMs$,
+				this._parsedIndeterminateProgress$
+			),
+			switchMap(
 				([
 					progress,
 					indeterminedLoadingAt,
@@ -127,7 +128,7 @@ class Button extends HTMLElement {
 									const duration = now - indeterminedLoadingAt;
 
 									const totalDuration =
-										indeterminateMinimumMs - indeterminateDurationMs;
+										indeterminateDurationMs - indeterminateMinimumMs;
 
 									const totalDuration1 = Math.max(totalDuration, 0);
 									const progress = Math.ceil((duration / totalDuration1) * 100);
@@ -142,23 +143,20 @@ class Button extends HTMLElement {
 
 					return of(progress || 0);
 				}
-			)
+			),
+			share()
 		);
 
-		this._activeIndeterminateProgress$ = combineLatest(
-			this._parsedIndeterminateProgress$,
-			this._loading$
-		).pipe(
-			map(([indeterminateProgress, progress]) => {
-				return indeterminateProgress && progress === 100;
-			})
-		);
+		this._activeIndeterminateProgress$ =
+			this._parsedIndeterminateProgress$.pipe(
+				combineLatestWith(this._loading$),
+				map(([indeterminateProgress, progress]) => {
+					return indeterminateProgress && progress === 100;
+				})
+			);
 
-		this._disabled$ = combineLatest(
-			this._parsedDisabled$,
-			this._activeIndeterminateProgress$,
-			this._loading$
-		).pipe(
+		this._disabled$ = this._parsedDisabled$.pipe(
+			combineLatestWith(this._activeIndeterminateProgress$, this._loading$),
 			map(([disabled, activeIndeterminateProgress, loading]) => {
 				return (
 					disabled ||
@@ -170,7 +168,8 @@ class Button extends HTMLElement {
 
 		this._loadingBarTransitionEnabled$ = this._loading$.pipe(
 			pairwise(),
-			map(([previous, current]) => current >= previous)
+			map(([previous, current]) => current >= previous),
+			startWith(false)
 		);
 
 		// debugging
@@ -217,14 +216,18 @@ class Button extends HTMLElement {
 		const shadowRoot = getShadowRoot(this);
 		shadowRoot.appendChild(template.content.cloneNode(true));
 
-		this._renderSubscription = combineLatest(
-			this._disabled$,
-			this._loading$,
-			this._activeIndeterminateProgress$,
-			this._loadingBarTransitionEnabled$
-		).subscribe((args) => {
-			this.render(...args);
-		});
+		this._renderSubscription = this._disabled$
+			.pipe(
+				combineLatestWith(
+					this._loading$,
+					this._activeIndeterminateProgress$,
+					this._loadingBarTransitionEnabled$
+				)
+			)
+			.subscribe((args) => {
+				console.log("render");
+				this.render(...args);
+			});
 	}
 
 	attributeChangedCallback(name: string) {
@@ -309,7 +312,7 @@ const template = createTemplate(html`
 				background-color: transparent;
 			}
 			50% {
-				background-color: rgba(255, 255, 255, 1);
+				background-color: rgba(255, 255, 255, 0.15);
 			}
 		}
 
@@ -343,6 +346,13 @@ const template = createTemplate(html`
 			right: 0;
 			width: 100%;
 		}
+
+		.btn-16:hover:after:disabled {
+			left: initial;
+			right: initial;
+			width: inherit;
+		}
+
 		.btn-16:active {
 			top: 2px;
 		}
@@ -376,7 +386,7 @@ const template = createTemplate(html`
 	</style>
 
 	<div className="button-container">
-		<button disabled className="custom-btn btn-16">
+		<button className="custom-btn btn-16">
 			<slot></slot>
 		</button>
 		<div className="progress-container">

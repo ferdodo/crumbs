@@ -5,33 +5,19 @@ import { Demo } from "../components";
 export function DemoButton() {
 	const [content, setContent] = useState("Click me !");
 	const [progress, setProgress] = useState("100");
-	const [isSimulating, setIsSimulating] = useState(false);
 	const [disabled, setDisabled] = useState(false);
 	const [indeterminate, setIndeterminate] = useState(false);
 	const [indeterminateDuration, setIndeterminateDuration] = useState(2000);
 
-	const simulateProgress = useCallback(async () => {
-		if (isSimulating) return;
-
-		setIsSimulating(true);
-		setProgress("0");
-
-		for (let value = 0; value <= 100; value += 0.1 + (100 - value) / 100) {
-			await new Promise((resolve) => setTimeout(resolve, 10));
-			setProgress(Math.floor(value).toString());
-		}
-
-		setProgress("100");
-		setIsSimulating(false);
-	}, [isSimulating]);
-
-	const handleClick = () => {
-		if (!isSimulating) {
-			simulateProgress();
-		}
-	};
-
-	const codeTemplate = `&lt;crumbs-button progress="${progress}" &gt; ${content} &lt;/crumbs-button&gt;`;
+	const codeTemplate = `
+		&lt;crumbs-button
+			${disabled ? "\tdisabled" : ""}
+			${indeterminate ? "\tindeterminate-progress" : ""}
+			${indeterminate ? `\tindeterminate-duration-ms="${indeterminateDuration}"` : ""}
+			\tprogress="${progress}"&gt;
+			\t${content}
+		&lt;/crumbs-button&gt;
+	`;
 
 	return html`
 		<${Demo} title="Button">
@@ -60,12 +46,6 @@ export function DemoButton() {
 
 				<br/>
 
-				<crumbs-button onClick=${handleClick}>
-					Simulate progress
-				</crumbs-button>
-
-				<br/>
-
 				<input type="checkbox" onInput=${() => setDisabled(!disabled)} />
 				<label> Disabled </label>
 
@@ -76,15 +56,11 @@ export function DemoButton() {
 
 				<br/>
 
-				${indeterminateDuration}
-
 				<crumbs-input
 					type="text"
 					value=${indeterminateDuration}
 					onInput=${(e) => setIndeterminateDuration(Number(e.originalTarget.value))}/>
 				<label> Indeterminate loading duration (ms) </label>
-
-
 			</div>
 
 			<code> <pre dangerouslySetInnerHTML=${{ __html: codeTemplate }}> </pre></code>
