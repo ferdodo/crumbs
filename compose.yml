@@ -1,6 +1,13 @@
 services:
   design-system:
-    build: design-system
+    build:
+      context: design-system
+      target: build
+
+  publish:
+    build:
+      context: design-system
+      target: publish
 
   website:
     build: website
