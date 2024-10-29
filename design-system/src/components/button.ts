@@ -180,7 +180,6 @@ class Button extends HTMLElement {
 								? indeterminateDurationMs - (Date.now() - indeterminedLoadingAt)
 								: 0;
 
-							console.log("timeLeft", timeLeft);
 							return of(activeIndeterminateProgress).pipe(delay(timeLeft));
 						}
 
@@ -205,35 +204,6 @@ class Button extends HTMLElement {
 			pairwise(),
 			map(([previous, current]) => current >= previous),
 			startWith(false)
-		);
-
-		// debugging
-
-		this._parsedProgress$.subscribe((value) =>
-			console.log("parsedProgress", value)
-		);
-
-		this._parsedDisabled$.subscribe((value) =>
-			console.log("parsedDisabled", value)
-		);
-
-		this._parsedIndeterminateProgress$.subscribe((value) =>
-			console.log("parsedIndeterminateProgress", value)
-		);
-		this._parsedIndeterminateDurationMs$.subscribe((value) =>
-			console.log("parsedIndeterminateDurationMs", value)
-		);
-		this._indeterminedLoadingAt$.subscribe((value) =>
-			console.log("indeterminedLoadingAt", value)
-		);
-		this._loading$.subscribe((value) => console.log("loading", value));
-		this._activeIndeterminateProgress$.subscribe((value) =>
-			console.log("activeIndeterminateProgress", value)
-		);
-		this._disabled$.subscribe((value) => console.log("disabled", value));
-
-		this._loadingBarTransitionEnabled$.subscribe((value) =>
-			console.log("loadingBarTransitionEnabled", value)
 		);
 	}
 
@@ -260,7 +230,6 @@ class Button extends HTMLElement {
 				)
 			)
 			.subscribe((args) => {
-				console.log("render");
 				this.render(...args);
 			});
 	}
