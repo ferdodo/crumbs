@@ -15,7 +15,8 @@ import {
 	share,
 	startWith,
 	switchMap,
-	takeWhile
+	takeWhile,
+	tap
 } from "rxjs";
 
 import { createTemplate, getElement, getShadowRoot } from "../utils";
@@ -155,7 +156,8 @@ class Button extends HTMLElement {
 					return of(progress || 0);
 				}
 			),
-			share()
+			share(),
+			startWith(100)
 		);
 
 		this._activeIndeterminateProgress$ =
@@ -186,7 +188,8 @@ class Button extends HTMLElement {
 						return of(activeIndeterminateProgress);
 					}
 				),
-				share()
+				share(),
+				startWith(false)
 			);
 
 		this._disabled$ = this._parsedDisabled$.pipe(
@@ -232,6 +235,8 @@ class Button extends HTMLElement {
 			.subscribe((args) => {
 				this.render(...args);
 			});
+
+		this._attributeChanges$.next(["disabled", this.getAttribute("disabled")]);
 	}
 
 	attributeChangedCallback(name: string) {
@@ -283,6 +288,12 @@ class Button extends HTMLElement {
 }
 
 customElements.define(tagName, Button);
+
+export function defineButtonCustomElement() {
+	if (customElements.get(tagName) === undefined) {
+		customElements.define(tagName, Button);
+	}
+}
 
 const template = createTemplate(html`
 	<style>

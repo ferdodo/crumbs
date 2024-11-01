@@ -13,12 +13,17 @@
 	"main": "dist/index.js",
 	"files": ["package.json", "dist"],
 	"scripts": {
-		"build": "biome ci . && tsc"
+		"build": "biome ci . && tsc && vitest run"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.8.1",
+		"@stryker-mutator/core": "^8.6.0",
+		"@stryker-mutator/vitest-runner": "^8.6.0",
+		"@testing-library/dom": "^10.4.0",
 		"@types/hyperscript": "^0.0.7",
-		"typescript": "^5.4.5"
+		"happy-dom": "^15.7.4",
+		"typescript": "^5.4.5",
+		"vitest": "^2.1.4"
 	},
 	"dependencies": {
 		"htm": "^3.1.1",

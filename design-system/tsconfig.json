@@ -6,5 +6,6 @@
 		"moduleResolution": "Bundler",
 		"strict": true,
 		"outDir": "dist"
-	}
+	},
+	"exclude": ["vitest.config.ts"]
 }

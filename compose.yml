@@ -9,9 +9,16 @@ services:
       context: design-system
       target: publish
 
+  coverage:
+    build:
+      context: design-system
+      target: coverage
+    ports:
+      - "63004:80"
+
   website:
     build: website
     ports:
-      - "3736:5173"
+      - "28005:5173"
     depends_on:
       - design-system
