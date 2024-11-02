@@ -1,31 +1,21 @@
-import { screen } from "@testing-library/dom";
-import { expect, test } from "vitest";
+import { within } from "@testing-library/dom";
+import { beforeAll, expect, test } from "vitest";
+import { generateShadowRootFirstHTMLElement as html } from "../utils/generate-shadow-root-first-html-element";
 import { defineButtonCustomElement } from "./button";
 
-defineButtonCustomElement();
-
-test("Expect button to be enabled by default", async () => {
+beforeAll(async () => {
+	defineButtonCustomElement();
 	await customElements.whenDefined("crumbs-button");
-	const container = document.createElement("div");
-	const dataTestid = Math.random().toString();
-	container.innerHTML = `<crumbs-button data-testid="${dataTestid}"> content </crumbs-button>`;
-	document.body.appendChild(container);
-
-	expect(
-		screen.getByTestId(dataTestid)?.shadowRoot?.querySelector("button")
-			?.disabled
-	).toBe(false);
 });
 
-test("Expect button to be disabled when having disabled attribute", async () => {
-	await customElements.whenDefined("crumbs-button");
-	const container = document.createElement("div");
-	const dataTestid = Math.random().toString();
-	container.innerHTML = `<crumbs-button data-testid="${dataTestid}" disabled> content </crumbs-button>`;
-	document.body.appendChild(container);
+test("Expect button to be enabled by default2", async () => {
+	const button = html`<crumbs-button> content </crumbs-button>`;
+	const innerButton: HTMLButtonElement = within(button).getByRole("button");
+	expect(innerButton.disabled).toBe(false);
+});
 
-	expect(
-		screen.getByTestId(dataTestid)?.shadowRoot?.querySelector("button")
-			?.disabled
-	).toBe(true);
+test("Expect button to be disabled when having disabled attribute2", async () => {
+	const button = html`<crumbs-button disabled> content </crumbs-button>`;
+	const innerButton: HTMLButtonElement = within(button).getByRole("button");
+	expect(innerButton.disabled).toEqual(true);
 });

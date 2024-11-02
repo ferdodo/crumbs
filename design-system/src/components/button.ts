@@ -237,6 +237,8 @@ class Button extends HTMLElement {
 			});
 
 		this._attributeChanges$.next(["disabled", this.getAttribute("disabled")]);
+
+		console.log("EMITING DISABLED", this.getAttribute("disabled"));
 	}
 
 	attributeChangedCallback(name: string) {
