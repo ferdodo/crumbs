@@ -237,8 +237,16 @@ class Button extends HTMLElement {
 			});
 
 		this._attributeChanges$.next(["disabled", this.getAttribute("disabled")]);
+		this._attributeChanges$.next(["progress", this.getAttribute("progress")]);
+		this._attributeChanges$.next([
+			"indeterminate-progress",
+			this.getAttribute("indeterminate-progress")
+		]);
 
-		console.log("EMITING DISABLED", this.getAttribute("disabled"));
+		this._attributeChanges$.next([
+			"indeterminate-duration-ms",
+			this.getAttribute("indeterminate-duration-ms")
+		]);
 	}
 
 	attributeChangedCallback(name: string) {
@@ -258,6 +266,7 @@ class Button extends HTMLElement {
 		const shadowRoot = getShadowRoot(this);
 		const progress = getElement(shadowRoot, "#progress");
 		const button = getElement(shadowRoot, "button");
+		const semanticProgress = getElement(shadowRoot, "progress");
 
 		if (button instanceof HTMLButtonElement) {
 			button.disabled = disabled;
@@ -281,6 +290,10 @@ class Button extends HTMLElement {
 		}
 
 		progress.style.width = `${progressValue}%`;
+
+		if (semanticProgress instanceof HTMLProgressElement) {
+			semanticProgress.value = progressValue;
+		}
 	}
 
 	disconnectedCallback() {
@@ -403,6 +416,10 @@ const template = createTemplate(html`
 			border-radius: 5px;
 		}
 
+		progress {
+			/*visibility: hidden;*/
+		}
+
 		#progress.transition {
 			transition: width 0.3s ease-in-out;
 		}
@@ -421,5 +438,6 @@ const template = createTemplate(html`
 		<div className="progress-container">
 			<div id="progress"></div>
 		</div>
+		<progress></progress>
 	</div>
 `);
