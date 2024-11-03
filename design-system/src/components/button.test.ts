@@ -6,8 +6,7 @@ import { generateShadowRootFirstHTMLElement as html } from "../utils/generate-sh
 import { defineButtonCustomElement } from "./button";
 
 beforeAll(async () => {
-	defineButtonCustomElement();
-	await customElements.whenDefined("crumbs-button");
+	await defineButtonCustomElement();
 });
 
 test("Expect button to be enabled by default", async () => {
@@ -29,7 +28,7 @@ test("Expect button to be loading when having loading attribute", async () => {
 	expect(value).toEqual("50");
 });
 
-test("Should be in progress when having indeterminate", () => {
+test("Should be in progress when having an ongoing indeterminate loading", () => {
 	const testScheduler = new TestScheduler(([a, b, c]) => {
 		expect(a.notification.value).toEqual("0");
 		expect(b.notification.value).not.toEqual("0");

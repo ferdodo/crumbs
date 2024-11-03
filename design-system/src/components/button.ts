@@ -3,6 +3,7 @@ import h from "hyperscript";
 import type { Observable, Subscription } from "rxjs";
 
 import {
+	NEVER,
 	Subject,
 	combineLatestWith,
 	concatMap,
@@ -15,8 +16,10 @@ import {
 	share,
 	startWith,
 	switchMap,
+	takeUntil,
 	takeWhile,
-	tap
+	tap,
+	timer
 } from "rxjs";
 
 import { createTemplate, getElement, getShadowRoot } from "../utils";
@@ -41,7 +44,7 @@ class Button extends HTMLElement {
 	_parsedDisabled$: Observable<boolean>;
 	_parsedIndeterminateProgress$: Observable<boolean>;
 	_parsedIndeterminateDurationMs$: Observable<number | null>;
-	_indeterminedLoadingAt$: Observable<number>;
+	_indeterminedLoadingTime$: Observable<number>;
 	_loading$: Observable<number>;
 	_activeIndeterminateProgress$: Observable<boolean>;
 	_disabled$: Observable<boolean>;
@@ -102,76 +105,72 @@ class Button extends HTMLElement {
 			})
 		);
 
-		this._indeterminedLoadingAt$ = this._parsedIndeterminateProgress$.pipe(
+		this._indeterminedLoadingTime$ = this._parsedIndeterminateProgress$.pipe(
 			startWith(false),
 			pairwise(),
 			filter(([previous, current]) => current && !previous),
-			map(() => Date.now()),
+			switchMap(() => interval(1).pipe(takeUntil(timer(20000)))),
 			startWith(0)
 		);
 
 		this._loading$ = this._parsedProgress$.pipe(
 			combineLatestWith(
-				this._indeterminedLoadingAt$,
+				this._indeterminedLoadingTime$,
 				this._parsedIndeterminateDurationMs$,
 				this._parsedIndeterminateProgress$
 			),
-			switchMap(
+			map(
 				([
 					progress,
-					indeterminedLoadingAt,
+					indeterminedLoadingTime,
 					indeterminateDurationMs,
 					indeterminateProgress
 				]) => {
 					const isRunningIndeterminateMinimalDuration =
 						indeterminateDurationMs !== null
 							? indeterminateDurationMs - indeterminateMinimumMs >
-								Date.now() - indeterminedLoadingAt
+								indeterminedLoadingTime
 							: false;
 
 					if (
 						indeterminateDurationMs !== null &&
 						isRunningIndeterminateMinimalDuration
 					) {
-						return interval(100).pipe(
-							map(() => {
-								const now = Date.now();
-								const duration = now - indeterminedLoadingAt;
+						const totalDuration =
+							indeterminateDurationMs - indeterminateMinimumMs;
 
-								const totalDuration =
-									indeterminateDurationMs - indeterminateMinimumMs;
+						const totalDuration1 = Math.max(totalDuration, 0);
 
-								const totalDuration1 = Math.max(totalDuration, 0);
-								const progress = Math.ceil((duration / totalDuration1) * 100);
-								return Math.min(100, progress);
-							}),
-							takeWhile((progress) => progress < 100, true)
+						const progress = Math.ceil(
+							(indeterminedLoadingTime / totalDuration1) * 100
 						);
+
+						return Math.min(100, progress);
 					}
 
 					if (indeterminateProgress) {
-						return of(0);
+						return 0;
 					}
 
-					return of(progress || 0);
+					return progress || 0;
 				}
 			),
 			share(),
-			startWith(100)
+			startWith(0)
 		);
 
 		this._activeIndeterminateProgress$ =
 			this._parsedIndeterminateProgress$.pipe(
 				combineLatestWith(
 					this._loading$,
-					this._indeterminedLoadingAt$,
+					this._indeterminedLoadingTime$,
 					this._parsedIndeterminateDurationMs$
 				),
-				concatMap(
+				map(
 					([
 						indeterminateProgress,
 						progress,
-						indeterminedLoadingAt,
+						indeterminedLoadingTime,
 						indeterminateDurationMs
 					]) => {
 						const activeIndeterminateProgress =
@@ -179,13 +178,13 @@ class Button extends HTMLElement {
 
 						if (!activeIndeterminateProgress) {
 							const timeLeft = indeterminateDurationMs
-								? indeterminateDurationMs - (Date.now() - indeterminedLoadingAt)
+								? indeterminateDurationMs - indeterminedLoadingTime
 								: 0;
 
-							return of(activeIndeterminateProgress).pipe(delay(timeLeft));
+							return timeLeft > 0;
 						}
 
-						return of(activeIndeterminateProgress);
+						return activeIndeterminateProgress;
 					}
 				),
 				share(),
@@ -195,12 +194,16 @@ class Button extends HTMLElement {
 		this._disabled$ = this._parsedDisabled$.pipe(
 			combineLatestWith(this._activeIndeterminateProgress$, this._loading$),
 			map(([disabled, activeIndeterminateProgress, loading]) => {
+				console.log({ disabled, activeIndeterminateProgress, loading });
+
 				return (
 					disabled ||
 					activeIndeterminateProgress ||
 					(loading > 0 && loading < 100)
 				);
-			})
+			}),
+			//share(),
+			startWith(false)
 		);
 
 		this._loadingBarTransitionEnabled$ = this._loading$.pipe(
@@ -304,10 +307,12 @@ class Button extends HTMLElement {
 
 customElements.define(tagName, Button);
 
-export function defineButtonCustomElement() {
+export async function defineButtonCustomElement() {
 	if (customElements.get(tagName) === undefined) {
 		customElements.define(tagName, Button);
 	}
+
+	await customElements.whenDefined(tagName);
 }
 
 const template = createTemplate(html`
