@@ -6,7 +6,7 @@
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/ferdodo/crumbs"
+		"url": "git+https://github.com/ferdodo/crumbs.git"
 	},
 	"keywords": ["web-components", "design-system", "ui-library"],
 	"type": "module",
