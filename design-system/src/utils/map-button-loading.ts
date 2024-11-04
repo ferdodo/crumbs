@@ -34,7 +34,7 @@ export function mapButtonLoading() {
 					}
 
 					if (indeterminateProgress) {
-						return 0;
+						return 100;
 					}
 
 					return progress || 0;

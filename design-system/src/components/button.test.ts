@@ -27,32 +27,3 @@ test("Expect button to be loading when having loading attribute", async () => {
 	const value = progress.getAttribute("value");
 	expect(value).toEqual("50");
 });
-
-/*test("Should be in progress when having an ongoing indeterminate loading", () => {
-	const testScheduler = new TestScheduler(([a, b, c]) => {
-		expect(a.notification.value).toEqual("0");
-		expect(b.notification.value).not.toEqual("0");
-		expect(b.notification.value).not.toEqual("100");
-		expect(c.notification.kind).toEqual("C");
-	});
-
-	testScheduler.run(({ cold, expectObservable }) => {
-		const button = html`
-			<crumbs-button
-				indeterminate-progress
-				indeterminate-duration-ms="2000">
-				content
-			</crumbs-button>
-		`;
-
-		const progress = within(button).getByRole("progressbar");
-
-		const result = cold("a 100ms b |").pipe(
-			map(() => {
-				return progress.getAttribute("value");
-			})
-		);
-
-		expectObservable(result).toBe("0");
-	});
-});*/

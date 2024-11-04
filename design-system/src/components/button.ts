@@ -23,6 +23,8 @@ import {
 } from "rxjs";
 
 import { createTemplate, getElement, getShadowRoot } from "../utils";
+import { mapButtonActiveUndeterminateProgress } from "../utils/map-button-active-undeterminate-progress";
+import { mapButtonDisabled } from "../utils/map-button-disabled";
 import { mapButtonLoading } from "../utils/map-button-loading";
 
 const html = htm.bind(h);
@@ -105,11 +107,14 @@ class Button extends HTMLElement {
 			})
 		);
 
+		const step = 50;
+
 		this._indeterminedLoadingTime$ = this._parsedIndeterminateProgress$.pipe(
 			startWith(false),
 			pairwise(),
 			filter(([previous, current]) => current && !previous),
-			switchMap(() => interval(1).pipe(takeUntil(timer(20000)))),
+			switchMap(() => interval(step).pipe(takeUntil(timer(20000 * step)))),
+			map((value) => value * step),
 			startWith(0)
 		);
 
@@ -119,7 +124,8 @@ class Button extends HTMLElement {
 				this._parsedIndeterminateDurationMs$,
 				this._parsedIndeterminateProgress$
 			),
-			mapButtonLoading()
+			mapButtonLoading(),
+			startWith(0)
 		);
 
 		this._activeIndeterminateProgress$ =
@@ -129,40 +135,13 @@ class Button extends HTMLElement {
 					this._indeterminedLoadingTime$,
 					this._parsedIndeterminateDurationMs$
 				),
-				map(
-					([
-						indeterminateProgress,
-						progress,
-						indeterminedLoadingTime,
-						indeterminateDurationMs
-					]) => {
-						const activeIndeterminateProgress =
-							indeterminateProgress && progress === 100;
-
-						if (!activeIndeterminateProgress) {
-							const timeLeft = indeterminateDurationMs
-								? indeterminateDurationMs - indeterminedLoadingTime
-								: 0;
-
-							return timeLeft > 0;
-						}
-
-						return activeIndeterminateProgress;
-					}
-				),
-				share(),
+				mapButtonActiveUndeterminateProgress(),
 				startWith(false)
 			);
 
 		this._disabled$ = this._parsedDisabled$.pipe(
 			combineLatestWith(this._activeIndeterminateProgress$, this._loading$),
-			map(([disabled, activeIndeterminateProgress, loading]) => {
-				return (
-					disabled ||
-					activeIndeterminateProgress ||
-					(loading > 0 && loading < 100)
-				);
-			}),
+			mapButtonDisabled(),
 			//share(),
 			startWith(false)
 		);

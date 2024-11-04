@@ -6,3 +6,4 @@ export { About } from "./about";
 export { Personalization } from "./personalization";
 export { GettingStarted } from "./getting-started";
 export { DemoButton } from "./demo-button";
+export { DemoButtonIndeterminate } from "./demo-button-indeterminate";

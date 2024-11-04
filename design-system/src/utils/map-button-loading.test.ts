@@ -38,7 +38,7 @@ test("Should be progress on nominal case", async function () {
 	expect(result).toBe(25);
 });
 
-test("Should be 0 on indeterminate progress without ongoing minimal progress", async function () {
+test("Should be 100 on indeterminate progress without ongoing minimal progress", async function () {
 	const progress = 50;
 	const indeterminedLoadingTime = 0;
 	const indeterminateDurationMs = null;
@@ -53,7 +53,7 @@ test("Should be 0 on indeterminate progress without ongoing minimal progress", a
 
 	const result$ = source$.pipe(mapButtonLoading());
 	const result = await firstValueFrom(result$);
-	expect(result).toBe(0);
+	expect(result).toBe(100);
 });
 
 test("Should have an ongoing progress when indeterminate progress is ongoing under minimal time", async function () {
@@ -107,7 +107,7 @@ test("Removing the duration while ongoing undeterminate progress should cancel t
 
 	const result$ = source$.pipe(mapButtonLoading());
 	const result = await firstValueFrom(result$);
-	expect(result).toBe(0);
+	expect(result).toBe(100);
 });
 
 test("Should be finished when loading time is exactly the indeterminate duration", async function () {
@@ -125,5 +125,5 @@ test("Should be finished when loading time is exactly the indeterminate duration
 
 	const result$ = source$.pipe(mapButtonLoading());
 	const result = await firstValueFrom(result$);
-	expect(result).toBe(0);
+	expect(result).toBe(100);
 });
