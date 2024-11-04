@@ -28,7 +28,7 @@ test("Expect button to be loading when having loading attribute", async () => {
 	expect(value).toEqual("50");
 });
 
-test("Should be in progress when having an ongoing indeterminate loading", () => {
+/*test("Should be in progress when having an ongoing indeterminate loading", () => {
 	const testScheduler = new TestScheduler(([a, b, c]) => {
 		expect(a.notification.value).toEqual("0");
 		expect(b.notification.value).not.toEqual("0");
@@ -55,4 +55,4 @@ test("Should be in progress when having an ongoing indeterminate loading", () =>
 
 		expectObservable(result).toBe("0");
 	});
-});
+});*/

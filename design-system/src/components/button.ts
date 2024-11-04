@@ -23,10 +23,10 @@ import {
 } from "rxjs";
 
 import { createTemplate, getElement, getShadowRoot } from "../utils";
+import { mapButtonLoading } from "../utils/map-button-loading";
 
 const html = htm.bind(h);
 const tagName = "crumbs-button";
-const indeterminateMinimumMs = 1000;
 
 declare global {
 	export namespace JSX {
@@ -119,44 +119,7 @@ class Button extends HTMLElement {
 				this._parsedIndeterminateDurationMs$,
 				this._parsedIndeterminateProgress$
 			),
-			map(
-				([
-					progress,
-					indeterminedLoadingTime,
-					indeterminateDurationMs,
-					indeterminateProgress
-				]) => {
-					const isRunningIndeterminateMinimalDuration =
-						indeterminateDurationMs !== null
-							? indeterminateDurationMs - indeterminateMinimumMs >
-								indeterminedLoadingTime
-							: false;
-
-					if (
-						indeterminateDurationMs !== null &&
-						isRunningIndeterminateMinimalDuration
-					) {
-						const totalDuration =
-							indeterminateDurationMs - indeterminateMinimumMs;
-
-						const totalDuration1 = Math.max(totalDuration, 0);
-
-						const progress = Math.ceil(
-							(indeterminedLoadingTime / totalDuration1) * 100
-						);
-
-						return Math.min(100, progress);
-					}
-
-					if (indeterminateProgress) {
-						return 0;
-					}
-
-					return progress || 0;
-				}
-			),
-			share(),
-			startWith(0)
+			mapButtonLoading()
 		);
 
 		this._activeIndeterminateProgress$ =
@@ -194,8 +157,6 @@ class Button extends HTMLElement {
 		this._disabled$ = this._parsedDisabled$.pipe(
 			combineLatestWith(this._activeIndeterminateProgress$, this._loading$),
 			map(([disabled, activeIndeterminateProgress, loading]) => {
-				console.log({ disabled, activeIndeterminateProgress, loading });
-
 				return (
 					disabled ||
 					activeIndeterminateProgress ||
