@@ -284,7 +284,7 @@ const template = createTemplate(html`
 		}
 
 		.indeterminate-loading {
-			animation: transparency-fade 1.5s ease-in-out infinite;
+			/*animation: transparency-fade 1.5s ease-in-out infinite;*/
 		}
 
 		.indeterminate-loading-end {
@@ -362,7 +362,7 @@ const template = createTemplate(html`
 		}
 
 		progress {
-			/*visibility: hidden;*/
+			visibility: hidden;
 		}
 
 		#progress.transition {
