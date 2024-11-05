@@ -347,7 +347,20 @@ const template = createTemplate(html`
 		.button-container {
 			display: grid;
 			grid-template-columns: 0.4rem 1fr 0.4rem;
-			grid-template-rows: 0.4rem 1fr 0.4rem; 
+			grid-template-rows: 0.4rem 1fr 0.4rem;
+			animation: fadeIn 0.3s ease-in-out;
+			animation-delay: 0.3s;
+			opacity: 0;
+			animation-fill-mode: forwards;
+		}
+
+		@keyframes fadeIn {
+			from {
+				opacity: 0;
+			}
+			to {
+				opacity: 1;
+			}
 		}
 
 		.progress-container {
