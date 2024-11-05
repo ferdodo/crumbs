@@ -275,7 +275,7 @@ var yr=Object.defineProperty;var gr=(t,e,n)=>e in t?yr(t,e,{enumerable:!0,config
 		}
 
 		.indeterminate-loading {
-			animation: transparency-fade 1.5s ease-in-out infinite;
+			/*animation: transparency-fade 1.5s ease-in-out infinite;*/
 		}
 
 		.indeterminate-loading-end {
@@ -353,7 +353,7 @@ var yr=Object.defineProperty;var gr=(t,e,n)=>e in t?yr(t,e,{enumerable:!0,config
 		}
 
 		progress {
-			/*visibility: hidden;*/
+			visibility: hidden;
 		}
 
 		#progress.transition {
