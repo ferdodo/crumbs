@@ -5,7 +5,9 @@
 		"target": "ESNext",
 		"moduleResolution": "Bundler",
 		"strict": true,
-		"outDir": "dist"
+		"outDir": "dist",
+		"declaration": true,
+		"emitDeclarationOnly": false
 	},
 	"exclude": ["vitest.config.ts"]
 }
