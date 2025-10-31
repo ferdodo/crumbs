@@ -1,39 +1,91 @@
 import { within } from "@testing-library/dom";
-import { beforeAll, expect, test } from "vitest";
+import { describe, beforeAll, expect, test } from "vitest";
 import { generateShadowRootFirstHTMLElement as html } from "../utils/generate-shadow-root-first-html-element";
 import { defineButtonCustomElement } from "./button";
 
-beforeAll(async () => {
-	await defineButtonCustomElement();
-});
-
-test("Expect button to be enabled by default", async () => {
-	const button = html`<crumbs-button> content </crumbs-button>`;
-
-	const innerButton: HTMLButtonElement = within(button).getByRole("button", {
-		hidden: true
+describe("<crumbs-button>", () => {
+	beforeAll(async () => {
+		await defineButtonCustomElement();
 	});
 
-	expect(innerButton.disabled).toBe(false);
-});
-
-test("Expect button to be disabled when having disabled attribute", async () => {
-	const button = html`<crumbs-button disabled> content </crumbs-button>`;
-
-	const innerButton: HTMLButtonElement = within(button).getByRole("button", {
-		hidden: true
+	test("should be enabled by default", async () => {
+		const button = html`<crumbs-button> content </crumbs-button>`;
+		const innerButton: HTMLButtonElement = within(button).getByRole("button", { hidden: true });
+		expect(innerButton.disabled).toBe(false);
 	});
 
-	expect(innerButton.disabled).toEqual(true);
-});
-
-test("Expect button to be loading when having loading attribute", async () => {
-	const button = html`<crumbs-button progress="50"> content </crumbs-button>`;
-
-	const progress = within(button).getByRole("progressbar", {
-		hidden: true
+	test("should be disabled when having disabled attribute", async () => {
+		const button = html`<crumbs-button disabled> content </crumbs-button>`;
+		const innerButton: HTMLButtonElement = within(button).getByRole("button", { hidden: true });
+		expect(innerButton.disabled).toEqual(true);
 	});
 
-	const value = progress.getAttribute("value");
-	expect(value).toEqual("50");
+	test("should be disabled when having disabled with bad value", async () => {
+		const button = html`<crumbs-button disabled="anything"> content </crumbs-button>`;
+		const innerButton: HTMLButtonElement = within(button).getByRole("button", { hidden: true });
+		expect(innerButton.disabled).toEqual(true);
+	});
+
+	test("should be enabled when having disabled explicitly false", async () => {
+		const button = html`<crumbs-button disabled="false"> content </crumbs-button>`;
+		const innerButton: HTMLButtonElement = within(button).getByRole("button", { hidden: true });
+		expect(innerButton.disabled).toEqual(false);
+	});
+
+	test("should be loading when having loading attribute", async () => {
+		const button = html`<crumbs-button progress="50"> content </crumbs-button>`;
+		const progress = within(button).getByRole("progressbar", { hidden: true });
+		const value = progress.getAttribute("value");
+		expect(value).toEqual("50");
+	});
+
+	test("should not be loading without progress", async () => {
+		const button = html`<crumbs-button> content </crumbs-button>`;
+		const progress = within(button).getByRole("progressbar", { hidden: true });
+		const value = progress.getAttribute("value");
+		expect(value).toEqual("0");
+	});
+
+	test("should not be loading with invalid number", async () => {
+		const button = html`<crumbs-button progress="bad progress"> content </crumbs-button>`;
+		const progress = within(button).getByRole("progressbar", { hidden: true });
+		const value = progress.getAttribute("value");
+		expect(value).toEqual("0");
+	});
+
+	test("should not be loading with out of range superior number", async () => {
+		const button = html`<crumbs-button progress="101"> content </crumbs-button>`;
+		const progress = within(button).getByRole("progressbar", { hidden: true });
+		const value = progress.getAttribute("value");
+		expect(value).toEqual("0");
+	});
+
+	test("should not be loading with out of range inferior number", async () => {
+		const button = html`<crumbs-button progress="-1"> content </crumbs-button>`;
+		const progress = within(button).getByRole("progressbar", { hidden: true });
+		const value = progress.getAttribute("value");
+		expect(value).toEqual("0");
+	});
+
+	test("should be loaded when progress is 100", async () => {
+		const button = html`<crumbs-button progress="100"> content </crumbs-button>`;
+		const progress = within(button).getByRole("progressbar", { hidden: true });
+		const value = progress.getAttribute("value");
+		expect(value).toEqual("100");
+	});
+
+	test("should be loaded when progress is 0", async () => {
+		const button = html`<crumbs-button progress="100"> content </crumbs-button>`;
+		const progress = within(button).getByRole("progressbar", { hidden: true });
+		const value = progress.getAttribute("value");
+		expect(value).toEqual("100");
+	});
+
+	test("should display indeterministic progress on indeterminate progress", async () => {
+		const button = html`<crumbs-button indeterminate-progress> content </crumbs-button>`;
+		const progress = within(button).getByRole("progressbar", { hidden: true });
+		const value = progress.hasAttribute("value");
+		expect(value).toEqual(false);
+	});
 });
+

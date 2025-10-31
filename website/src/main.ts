@@ -8,7 +8,6 @@ import { background$, font$, getBackground, getFont } from "./states";
 import {
 	About,
 	DemoButton,
-	DemoButtonIndeterminate,
 	DemoInput,
 	DemoP,
 	DemoPanel,
@@ -50,7 +49,6 @@ function Main() {
 			<${DemoInput}><//>
 			<${DemoTabs}><//>
 			<${DemoButton}><//>
-			<${DemoButtonIndeterminate}><//>
 		</div>
 	`;
 }

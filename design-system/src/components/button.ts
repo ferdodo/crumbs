@@ -6,17 +6,12 @@ import {
 	Subject,
 	combineLatestWith,
 	filter,
-	interval,
 	map,
 	pairwise,
 	startWith,
-	switchMap,
-	takeUntil,
-	timer
 } from "rxjs";
 
 import { createTemplate, getElement, getShadowRoot } from "../utils";
-import { mapButtonActiveUndeterminateProgress } from "../utils/map-button-active-undeterminate-progress";
 import { mapButtonDisabled } from "../utils/map-button-disabled";
 import { mapButtonLoading } from "../utils/map-button-loading";
 
@@ -26,7 +21,7 @@ const tagName = "crumbs-button";
 declare global {
 	export namespace JSX {
 		export interface IntrinsicElements {
-			[tagName]: { progress?: string };
+			[tagName]: { progress?: string, disabled?: boolean };
 		}
 	}
 }
@@ -38,8 +33,6 @@ class Button extends HTMLElement {
 	_parsedProgress$: Observable<number | null>;
 	_parsedDisabled$: Observable<boolean>;
 	_parsedIndeterminateProgress$: Observable<boolean>;
-	_parsedIndeterminateDurationMs$: Observable<number | null>;
-	_indeterminedLoadingTime$: Observable<number>;
 	_loading$: Observable<number>;
 	_activeIndeterminateProgress$: Observable<boolean>;
 	_disabled$: Observable<boolean>;
@@ -51,70 +44,29 @@ class Button extends HTMLElement {
 		this._parsedProgress$ = this._attributeChanges$.pipe(
 			filter(([name]) => name === "progress"),
 			map(([_, value]) => value),
-			startWith(this.getAttribute("progress")),
-			map((progress) => (progress === null ? null : Number(progress))),
+			map(Number),
 			filter((progress) => {
 				return (
-					progress === null ||
 					(Number.isInteger(progress) &&
-						Number.isFinite(progress) &&
-						progress <= 100 &&
-						progress >= 0)
+						progress <= 100)
 				);
 			})
-		);
-
-		this._parsedDisabled$ = this._attributeChanges$.pipe(
-			filter(([name]) => name === "disabled"),
-			map(([_, value]) => value),
-			startWith(this.getAttribute("disabled")),
-			map((disabled) => disabled !== null && disabled !== "false")
 		);
 
 		this._parsedIndeterminateProgress$ = this._attributeChanges$.pipe(
 			filter(([name]) => name === "indeterminate-progress"),
 			map(([_, value]) => value),
-			startWith(this.getAttribute("indeterminate-progress")),
-			map(
-				(indeterminateProgress) =>
-					indeterminateProgress !== null && indeterminateProgress !== "false"
-			)
+			map(indeterminateProgress => indeterminateProgress !== null)
 		);
 
-		this._parsedIndeterminateDurationMs$ = this._attributeChanges$.pipe(
-			filter(([name]) => name === "indeterminate-duration-ms"),
+		this._parsedDisabled$ = this._attributeChanges$.pipe(
+			filter(([name]) => name === "disabled"),
 			map(([_, value]) => value),
-			startWith(this.getAttribute("indeterminate-duration-ms")),
-			map((indeterminateDurationMs) => {
-				return indeterminateDurationMs === null
-					? null
-					: Number(indeterminateDurationMs);
-			}),
-			filter((indeterminateDurationMs) => {
-				return (
-					indeterminateDurationMs === null ||
-					(Number.isInteger(indeterminateDurationMs) &&
-						Number.isFinite(indeterminateDurationMs) &&
-						indeterminateDurationMs >= 0)
-				);
-			})
-		);
-
-		const step = 50;
-
-		this._indeterminedLoadingTime$ = this._parsedIndeterminateProgress$.pipe(
-			startWith(false),
-			pairwise(),
-			filter(([previous, current]) => current && !previous),
-			switchMap(() => interval(step).pipe(takeUntil(timer(20000 * step)))),
-			map((value) => value * step),
-			startWith(0)
+			map((disabled) => disabled !== null && disabled !== "false")
 		);
 
 		this._loading$ = this._parsedProgress$.pipe(
 			combineLatestWith(
-				this._indeterminedLoadingTime$,
-				this._parsedIndeterminateDurationMs$,
 				this._parsedIndeterminateProgress$
 			),
 			mapButtonLoading(),
@@ -123,19 +75,12 @@ class Button extends HTMLElement {
 
 		this._activeIndeterminateProgress$ =
 			this._parsedIndeterminateProgress$.pipe(
-				combineLatestWith(
-					this._loading$,
-					this._indeterminedLoadingTime$,
-					this._parsedIndeterminateDurationMs$
-				),
-				mapButtonActiveUndeterminateProgress(),
 				startWith(false)
 			);
 
 		this._disabled$ = this._parsedDisabled$.pipe(
 			combineLatestWith(this._activeIndeterminateProgress$, this._loading$),
 			mapButtonDisabled(),
-			//share(),
 			startWith(false)
 		);
 
@@ -151,7 +96,6 @@ class Button extends HTMLElement {
 			"progress",
 			"disabled",
 			"indeterminate-progress",
-			"indeterminate-duration-ms"
 		];
 	}
 
@@ -177,11 +121,6 @@ class Button extends HTMLElement {
 		this._attributeChanges$.next([
 			"indeterminate-progress",
 			this.getAttribute("indeterminate-progress")
-		]);
-
-		this._attributeChanges$.next([
-			"indeterminate-duration-ms",
-			this.getAttribute("indeterminate-duration-ms")
 		]);
 	}
 
@@ -211,6 +150,10 @@ class Button extends HTMLElement {
 		if (indeterminateLoading) {
 			button.classList.remove("indeterminate-loading-end");
 			button.classList.add("indeterminate-loading");
+			
+			if (semanticProgress instanceof HTMLProgressElement) {
+				semanticProgress.removeAttribute("value")
+			}
 		} else {
 			button.classList.add("indeterminate-loading-end");
 
@@ -227,7 +170,7 @@ class Button extends HTMLElement {
 
 		progress.style.width = `${progressValue}%`;
 
-		if (semanticProgress instanceof HTMLProgressElement) {
+		if (!indeterminateLoading && semanticProgress instanceof HTMLProgressElement) {
 			semanticProgress.value = progressValue;
 		}
 	}
