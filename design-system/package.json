@@ -22,7 +22,7 @@
 		"@stryker-mutator/vitest-runner": "^9.1.1",
 		"@testing-library/dom": "^10.4.0",
 		"@types/hyperscript": "^0.0.7",
-		"happy-dom": "^19.0.2",
+		"happy-dom": "^20.0.8",
 		"typescript": "^5.4.5",
 		"vitest": "^3.2.4"
 	},
