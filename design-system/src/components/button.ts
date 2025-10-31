@@ -3,22 +3,15 @@ import h from "hyperscript";
 import type { Observable, Subscription } from "rxjs";
 
 import {
-	NEVER,
 	Subject,
 	combineLatestWith,
-	concatMap,
-	delay,
 	filter,
 	interval,
 	map,
-	of,
 	pairwise,
-	share,
 	startWith,
 	switchMap,
 	takeUntil,
-	takeWhile,
-	tap,
 	timer
 } from "rxjs";
 

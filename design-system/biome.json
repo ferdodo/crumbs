@@ -5,18 +5,28 @@
 		"rules": {
 			"complexity": {
 				"useArrowFunction": "off"
+			},
+			"correctness": {
+				"noUnusedImports": "error"
+			},
+			"suspicious": {
+				"noTemplateCurlyInString": "error"
 			}
 		}
 	},
-	"javascript": {
-		"formatter": {
-			"trailingCommas": "none"
+	"formatter": {
+		"enabled": false
+	},
+	"assist": {
+		"actions": {
+			"source": {
+				"organizeImports": "off"
+			}
 		}
 	},
-	"formatter": {
-		"enabled": true
-	},
-	"organizeImports": {
-		"enabled": true
+	"files": {
+		"includes": [
+			"**/src/**"
+		]
 	}
 }

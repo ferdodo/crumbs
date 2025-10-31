@@ -9,5 +9,5 @@
 		"declaration": true,
 		"emitDeclarationOnly": false
 	},
-	"exclude": ["vitest.config.ts"]
+	"exclude": ["vitest.config.ts", "dist"]
 }

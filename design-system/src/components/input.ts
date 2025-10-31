@@ -71,7 +71,7 @@ class Input extends HTMLElement {
 		}
 	}
 
-	attributeChangedCallback(name: string, oldValue: string, newValue: string) {
+	attributeChangedCallback(name: string, _oldValue: string, newValue: string) {
 		if (name === "value" && this.shadowRoot) {
 			const shadowRoot = getShadowRoot(this);
 			const input = getElement(shadowRoot, "input");

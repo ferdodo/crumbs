@@ -1,6 +1,4 @@
 import { within } from "@testing-library/dom";
-import { map } from "rxjs/operators";
-import { TestScheduler } from "rxjs/testing";
 import { beforeAll, expect, test } from "vitest";
 import { generateShadowRootFirstHTMLElement as html } from "../utils/generate-shadow-root-first-html-element";
 import { defineButtonCustomElement } from "./button";

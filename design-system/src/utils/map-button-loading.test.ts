@@ -1,4 +1,4 @@
-import { firstValueFrom, from, of } from "rxjs";
+import { firstValueFrom, of } from "rxjs";
 import { expect, test } from "vitest";
 import { mapButtonLoading } from "./map-button-loading";
 

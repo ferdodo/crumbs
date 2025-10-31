@@ -8,16 +8,23 @@
 		"type": "git",
 		"url": "git+https://github.com/ferdodo/crumbs.git"
 	},
-	"keywords": ["web-components", "design-system", "ui-library"],
+	"keywords": [
+		"web-components",
+		"design-system",
+		"ui-library"
+	],
 	"type": "module",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
-	"files": ["package.json", "dist"],
+	"files": [
+		"package.json",
+		"dist"
+	],
 	"scripts": {
 		"build": "biome ci . && tsc && vitest run"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^1.8.1",
+		"@biomejs/biome": "^2.3.2",
 		"@stryker-mutator/core": "^9.1.1",
 		"@stryker-mutator/vitest-runner": "^9.1.1",
 		"@testing-library/dom": "^10.4.0",

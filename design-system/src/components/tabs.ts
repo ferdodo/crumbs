@@ -80,7 +80,7 @@ class Tabs extends HTMLElement {
 		const clonedTemplate = template.content.cloneNode(true);
 		shadowRoot.appendChild(clonedTemplate);
 		const selected = this.getAttribute("selected");
-		this.selected = Number.parseInt(selected || "1");
+		this.selected = Number.parseInt(selected || "1", 10);
 		const tabs = shadowRoot.querySelector("#tabs");
 		const content = shadowRoot.querySelector("#content");
 

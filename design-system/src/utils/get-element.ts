@@ -5,7 +5,7 @@ export function getElement(
 	const element: HTMLElement | null = shadowRoot.querySelector(selector);
 
 	if (!element) {
-		throw new Error("Failed to find element ${ selector } !");
+		throw new Error(`Failed to find element ${ selector } !`);
 	}
 
 	return element;
