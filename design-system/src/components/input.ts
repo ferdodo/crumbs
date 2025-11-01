@@ -84,3 +84,11 @@ class Input extends HTMLElement {
 }
 
 customElements.define(tagName, Input);
+
+export async function defineInputCustomElement() {
+	if (customElements.get(tagName) === undefined) {
+		customElements.define(tagName, Input);
+	}
+
+	await customElements.whenDefined(tagName);
+}
