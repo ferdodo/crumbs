@@ -2,7 +2,7 @@ import { html } from "htm/preact";
 import { useState } from "preact/hooks";
 import { Demo } from "../components";
 
-export function DemoButton() {
+export function DemoButton({ order }) {
 	const [content, setContent] = useState("Click me !");
 	const [progress, setProgress] = useState("100");
 	const [disabled, setDisabled] = useState(false);
@@ -16,7 +16,7 @@ export function DemoButton() {
 	`;
 
 	return html`
-		<${Demo} title="Button">
+		<${Demo} title="Button" order=${order}>
 			<crumbs-button
 				progress=${progress}
 				disabled=${disabled}>

@@ -2,11 +2,11 @@ import { html } from "htm/preact";
 import { useState } from "preact/hooks";
 import { Demo } from "../components";
 
-export function DemoP() {
+export function DemoP({ order }) {
 	const [content, setContent] = useState("I'm a <b>paragraph</b> !");
 
 	return html`
-		<${Demo} title="Paragraph">
+		<${Demo} title="Paragraph" order=${order}>
 			<div>
 				<crumbs-p dangerouslySetInnerHTML=${{ __html: content }}>
 				</crumbs-p>

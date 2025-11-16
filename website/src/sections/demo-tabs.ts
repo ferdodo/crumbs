@@ -2,7 +2,7 @@ import { html } from "htm/preact";
 import { useState } from "preact/hooks";
 import { Demo } from "../components";
 
-export function DemoTabs() {
+export function DemoTabs({ order }) {
 	const [content, setContent] = useState("Tab content");
 	const [title, setTitle] = useState("Tab title");
 	const [content2, setContent2] = useState("Tab content 2");
@@ -10,13 +10,13 @@ export function DemoTabs() {
 	const codeTemplate = `&lt;crumbs-tabs&gt;\n\t&lt;crumbs-p\n\t\tslot="title-1"&gt;\n\t\t${title}\n\t&lt;/crumbs-p&gt;\n\t&lt;crumbs-p\n\t\tslot="content-1"&gt;\n\t\t${content}\n\t&lt;/crumbs-p&gt;\n\t&lt;crumbs-p\n\t\tslot="title-2"&gt;\n\t\t${title2}\n\t&lt;/crumbs-p&gt;\n\t&lt;crumbs-p\n\t\tslot="content-2"&gt;\n\t\t${content2}\n\t&lt;/crumbs-p&gt;\n&lt;/crumbs-panel&gt;`;
 
 	return html`
-		<${Demo} title="Tabs">
+		<${Demo} title="Tabs" order=${order}>
 			<crumbs-tabs>
 				<crumbs-p slot="title-1"> ${title} </crumbs-p>
 				<crumbs-p slot="content-1"> ${content} </crumbs-p>
 				<crumbs-p slot="title-2"> ${title2} </crumbs-p>
 				<crumbs-p slot="content-2"> ${content2} </crumbs-p>
-			</crumbs-panel>
+			</crumbs-tabs>
 
 			<div>
 				<crumbs-p>Title</crumbs-p>

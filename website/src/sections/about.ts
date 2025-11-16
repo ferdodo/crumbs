@@ -1,8 +1,15 @@
+import { css } from "goober";
 import { html } from "htm/preact";
 
-export function About() {
+const tabStyle = css`
+	max-width: 36rem;
+	max-height: 70cqh;
+`;
+
+export function About({ order }) {
 	return html`
-		<crumbs-panel panel-title="About">
+		<span slot=${`title-${order}`}> About</span>
+		<crumbs-panel panel-title="About" slot=${`content-${order}`} className=${tabStyle}>
 			<crumbs-tabs>
 				<div slot="title-1">Crumbs ?</div>
 

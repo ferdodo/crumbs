@@ -15,6 +15,7 @@ import {
 	GettingStarted,
 	Personalization
 } from "./sections";
+import { DemoNav } from "./sections/demo-nav";
 
 function Main() {
 	const background = useObservableState(background$, getBackground);
@@ -27,6 +28,7 @@ function Main() {
 		position: fixed;
 		min-width: 100vw;
 		background-position: center;
+		z-index: -999;
 	`;
 
 	const sectionClass = css`
@@ -40,16 +42,18 @@ function Main() {
 	return html`
 		<div class=${backgroundClass}></div>
 
-		<div class=${sectionClass}>
-			<${About}><//>
-			<${GettingStarted}><//>
-			<${Personalization}><//>
-			<${DemoP}><//>
-			<${DemoPanel}><//>
-			<${DemoInput}><//>
-			<${DemoTabs}><//>
-			<${DemoButton}><//>
-		</div>
+		<crumbs-nav class=${sectionClass}>
+			<${About} order=${1}><//>
+			<${GettingStarted} order=${2}><//>
+			<${Personalization} order=${3}><//>
+			<${DemoP} order=${4}><//>
+			<${DemoPanel} order=${5}><//>
+			<${DemoInput} order=${6}><//>
+			<${DemoTabs} order=${7}><//>
+			<${DemoButton} order=${8}><//>
+			<${DemoNav} order=${9}><//>
+			<span slot="navigation-toggle"> :: </span>
+		</crumbs-nav>
 	`;
 }
 
