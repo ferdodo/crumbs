@@ -12,9 +12,13 @@ import {
 
 import { useObservableState } from "preact-observable-hooks";
 
-export function Personalization() {
+export function Personalization({ order }) {
 	const background = useObservableState(background$, getBackground);
 	const font = useObservableState(font$, getFont);
+
+	const tabStyle = css`
+		max-height: 70cqh;
+	`;
 
 	const personalizationClass = css`
 		display: grid;
@@ -36,7 +40,8 @@ export function Personalization() {
 	`;
 
 	return html`
-		<crumbs-panel panel-title="Personalization">
+		<span slot=${`title-${order}`}>Personalization</span>
+		<crumbs-panel panel-title="Personalization" slot=${`content-${order}`} className=${tabStyle}>
 			<div className=${personalizationClass}>
 				<crumbs-p>
 					Some samples to demonstrate personalization.

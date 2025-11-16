@@ -2,7 +2,7 @@ import { html } from "htm/preact";
 import { useCallback, useState } from "preact/hooks";
 import { Demo } from "../components";
 
-export function DemoPanel() {
+export function DemoPanel({ order }) {
 	const [content, setContent] = useState("I'm a panel !");
 	const [title, setTitle] = useState("");
 	const [loading, setLoading] = useState("100");
@@ -32,14 +32,12 @@ export function DemoPanel() {
 	};
 
 	return html`
-		<${Demo} title="Panel">
-			<div style="padding: 5rem">
-				<crumbs-panel
-					panel-loading=${loading}
-					panel-title=${title}>
-					${content}
-				</crumbs-panel>
-			</div>
+		<${Demo} title="Panel" order=${order}>
+			<crumbs-panel
+				panel-loading=${loading}
+				panel-title=${title}>
+				${content}
+			</crumbs-panel>
 
 			<div>
 				<crumbs-p>Title</crumbs-p>

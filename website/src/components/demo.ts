@@ -4,24 +4,40 @@ import { html } from "htm/preact";
 interface DemoProps {
 	title: string;
 	children: Element[] | Element[][];
+	order: number;
 }
 
-const contentStyle = css`
-	height: 95%;
-	display: grid;
-	place-content: space-evenly;
+const panelStyle = css`
+	height: 70cqh;
 `;
 
-export function Demo({ title, children }: DemoProps) {
+const contentStyle = css`
+	min-height: 95%;
+	display: grid;
+	align-content: space-evenly;
+`;
+
+const frameStyle = css`
+	display: grid;
+	justify-content: center;
+`;
+
+export function Demo({ title, children, order }: DemoProps) {
 	return html`
-		<crumbs-panel panel-title=${title}>
+		<span slot=${`title-${order}`}>${title}</span>
+		<crumbs-panel panel-title=${title} slot=${`content-${order}`} className=${panelStyle}>
 			<crumbs-tabs style="height: 100%;">
 				<span slot="title-1"> Demo </span>
 				<div className=${contentStyle} slot="content-1">
-					${children[0]}
-					<crumbs-panel panel-title="Params">
+					<crumbs-frame className=${frameStyle}>
+						${children[0]}
+					</crumbs-frame>
+					<crumbs-frame className=${frameStyle}>
+						<crumbs-p>
+							<h3>Parameters</h3>
+						</crumbs-p>
 						${children[1]}
-					</crumbs-panel>
+					</crumbs-frame>
 				</div>
 				<span slot="title-3"> Code </span>
 				<div className=${contentStyle} slot="content-3">${children[2]}</div>

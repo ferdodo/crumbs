@@ -60,7 +60,7 @@ const template = createTemplate(html`
 		#panel-loading-container {
 			grid-area: 2 / 2 / 3 / 3;
 			overflow: hidden;
-			backdrop-filter: blur(0.3rem);
+			/*backdrop-filter: blur(0.3rem);*/
 		}
 
 		#panel-title {
@@ -168,7 +168,7 @@ class Panel extends HTMLElement {
 			panelContainer.style.gridTemplateColumns = "1rem 1fr 1rem";
 			panelContainer.style.gridTemplateRows = "1rem 1fr 1rem";
 			const panel: HTMLElement = getElement(shadowRoot, "#panel");
-			panel.style.backgroundColor = "#ffffff40";
+			panel.style.backgroundColor = "rgba(255, 255, 255, 0.37)";
 
 			this.scrolledSubscription = fromEvent(panel, "scroll")
 				.pipe(
