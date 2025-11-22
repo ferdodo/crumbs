@@ -162,7 +162,7 @@ class Panel extends HTMLElement {
 		setTimeout(() => {
 			const panelContainer: HTMLElement = getElement(
 				shadowRoot,
-				"#panel-container"
+				"#panel-container",
 			);
 
 			panelContainer.style.gridTemplateColumns = "1rem 1fr 1rem";
@@ -174,7 +174,7 @@ class Panel extends HTMLElement {
 				.pipe(
 					map((e: Event) => (e.target as HTMLElement).scrollTop),
 					// startWith(0),
-					map((scrollTop: number) => scrollTop !== 0)
+					map((scrollTop: number) => scrollTop !== 0),
 					// distinctUntilChanged()
 				)
 				.subscribe((value: boolean) => {
@@ -202,7 +202,7 @@ class Panel extends HTMLElement {
 
 		const panelTitleContent: HTMLElement = getElement(
 			shadowRoot,
-			"#panel-title-content"
+			"#panel-title-content",
 		);
 
 		if (this.contentTimeoutElapsed && isLoaded(this.loading)) {

@@ -1,24 +1,94 @@
 services:
   design-system:
-    build:
-      context: design-system
-      target: build
+    build: design-system
 
   publish:
     build:
       context: design-system
-      target: publish
+      dockerfile: docker/publish.Dockerfile
+      additional_contexts:
+        crumbs-design-system: service:design-system
+        crumbs-design-system-audit: service:design-system-audit
+        crumbs-design-system-coverage: service:design-system-coverage
+        crumbs-design-system-lint: service:design-system-lint
+        crumbs-design-system-test: service:design-system-test
+        crumbs-design-system-typecheck: service:design-system-typecheck
+        crumbs-website-audit: service:website-audit
+        crumbs-website-lint: service:website-lint
+        crumbs-website-typecheck: service:website-typecheck
 
-  coverage:
+  design-system-coverage:
     build:
       context: design-system
-      target: coverage
+      dockerfile: docker/coverage.Dockerfile
+      additional_contexts:
+        crumbs-design-system: service:design-system
     ports:
       - "63004:80"
 
+  design-system-audit:
+    build:
+      context: design-system
+      dockerfile: docker/audit.Dockerfile
+      additional_contexts:
+        crumbs-design-system: service:design-system
+
+  design-system-lint:
+    build:
+      context: design-system
+      dockerfile: docker/lint.Dockerfile
+      additional_contexts:
+        crumbs-design-system: service:design-system
+
+  design-system-test:
+    build:
+      context: design-system
+      dockerfile: docker/test.Dockerfile
+      additional_contexts:
+        crumbs-design-system: service:design-system
+
+  design-system-typecheck:
+    build:
+      context: design-system
+      dockerfile: docker/typecheck.Dockerfile
+      additional_contexts:
+        crumbs-design-system: service:design-system
+
   website:
-    build: website
+    build:
+      context: website
+      additional_contexts:
+        crumbs-design-system: service:design-system
     ports:
       - "28005:5173"
-    depends_on:
-      - design-system
+    develop:
+      watch:
+        - action: sync
+          path: website/src
+          target: /crumbs/website/src
+        - action: rebuild
+          path: website/package.json
+        - action: rebuild
+          path: design-system
+
+  website-audit:
+    build:
+      context: website
+      dockerfile: docker/audit.Dockerfile
+      additional_contexts:
+        crumbs-website: service:website
+
+  website-lint:
+    build:
+      context: website
+      dockerfile: docker/lint.Dockerfile
+      additional_contexts:
+        crumbs-website: service:website
+
+  website-typecheck:
+    build:
+      context: website
+      dockerfile: docker/typecheck.Dockerfile
+      additional_contexts:
+        crumbs-website: service:website
+  

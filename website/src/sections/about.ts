@@ -17,26 +17,15 @@ export function About({ order }) {
 					<crumbs-p>
 						Crumbs is a web component library
 						that you can use to build your own website.
-					</crumbs-p>
-
-					<crumbs-p>
-						<b>Why crumbs ?</b>
-					</crumbs-p>
-
-					<crumbs-p>
-						It's technical successor one of my other project
-						called <i>cookies-ds</i>. And it obviously needed a
-						better name.
-					</crumbs-p>						
+					</crumbs-p>				
 
 					<crumbs-p>
 						<b>Purpose</b>
 					</crumbs-p>
 
 					<crumbs-p>
-						This library implements my own taste in design,
-						and is meant for me, ME ALONE. But it's totally
-						fine to be used by anyone.
+						This library is made for myself and reflects my own design preferences.
+						Anyone is welcome to use it and modify it.
 					</crumbs-p>
 				</div>
 

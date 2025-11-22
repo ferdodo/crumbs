@@ -1,6 +1,8 @@
 {
 	"scripts": {
-		"build": "biome ci . && tsc && vite build",
+		"build": "vite build",
+		"typecheck": "tsc --noEmit",
+		"lint": "biome ci src",
 		"start": "vite --host"
 	},
 	"devDependencies": {
