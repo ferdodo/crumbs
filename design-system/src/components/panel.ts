@@ -27,20 +27,35 @@ const template = createTemplate(html`
 			display: grid;
 			grid-column-gap: 0px;
 			grid-row-gap: 0px;
-			transition: grid-template-columns .5s cubic-bezier(.12,1.03,.11,.99), grid-template-rows .5s cubic-bezier(.12,1.03,.11,.99);
+			grid-template-columns: 1rem 1fr 1rem;
+			grid-template-rows: 1rem 1fr 1rem;
+			animation: fadein .5s cubic-bezier(.12,1.03,.11,.99);
 			height: 100%;
+		}
+
+		@keyframes fadein {
+			from {
+				opacity: 0;
+				transform: scale(0.75) translateY(-11%);
+			}
+			to {
+				opacity: 1;
+				transform: scale(1) translateY(0);
+			}
 		}
 
 		#panel {
 			border-radius: 0.3rem;
 			padding: 1.7rem;
+			padding-top: 0;
+			padding-bottom: 0;
 			grid-area: 2 / 2 / 3 / 3;
 			background-color: #ffffff00;
 			box-shadow: 0px 0px 9px 5px rgba(28, 44, 83, 0.04);
 			box-shadow: 2px 10px 50px 5px rgba(26, 25, 25, 0.47);
 			transition: background-color .5s cubic-bezier(.12,1.03,.11,.99);
 			color: black;
-			overflow: auto;
+			overflow: hidden;
 			position: relative;
 		}
 
@@ -50,11 +65,29 @@ const template = createTemplate(html`
 		}
 
 		#panel-content {
-			visibility: collapse;
 			transition: opacity 1s cubic-bezier(.12,1.03,.11,.99);
 			z-index: 1;
 			position: relative;
-			height: calc(100% - 2.5rem);
+			grid-area: 2 / 2 / 3 / 3;
+			padding-top: 2.5rem;
+			padding-bottom: 2.5rem;
+			padding-left: 2.5rem;
+			padding-right: 2.5rem;
+			overflow: auto;
+		}
+
+		#panel-footer-wrapper {
+			grid-area: 2 / 2 / 3 / 3;
+			z-index: 2;
+			position: relative;
+			padding: 0 1.7rem 1.7rem 1.7rem;
+			display: flex;
+			align-items: flex-end;
+			pointer-events: none;
+
+			& > * {
+				pointer-events: auto;
+			}
 		}
 
 		#panel-loading-container {
@@ -70,10 +103,11 @@ const template = createTemplate(html`
 			padding-left: 1rem;
 			padding-right: 1rem;
 			opacity: 0;
-			transition-duration: 0.2s;
+			transition-duration: 0.5s;
 			transition-timing-function: cubic-bezier(.12,1.03,.11,.99);
 			transition-delay: 0.4s;
 			transition-property: opacity;
+			z-index: 3;
 		}
 
 		#panel-loading {
@@ -114,15 +148,20 @@ const template = createTemplate(html`
 		}
 	</style>
 
-	<div id="panel-container" style="grid-template-columns: 20% 1fr 20%; grid-template-rows: 1rem 1fr 40%;">
+	<div id="panel-container">
 		<div id="panel-loading-container">
 			<div id="panel-loading"></div>
 		</div>
 
 		<div id="panel">
-			<div id="panel-content" style="opacity: 0;">
-				<slot></slot>
-			</div>
+		</div>
+
+		<div id="panel-content" style="opacity: 0;">
+			<slot></slot>
+		</div>
+
+		<div id="panel-footer-wrapper">
+			<slot name="footer"></slot>
 		</div>
 
 		<div id="panel-title-container">
@@ -165,12 +204,11 @@ class Panel extends HTMLElement {
 				"#panel-container",
 			);
 
-			panelContainer.style.gridTemplateColumns = "1rem 1fr 1rem";
-			panelContainer.style.gridTemplateRows = "1rem 1fr 1rem";
 			const panel: HTMLElement = getElement(shadowRoot, "#panel");
 			panel.style.backgroundColor = "rgba(255, 255, 255, 0.37)";
 
-			this.scrolledSubscription = fromEvent(panel, "scroll")
+			const panelContent: HTMLElement = getElement(shadowRoot, "#panel-content");
+			this.scrolledSubscription = fromEvent(panelContent, "scroll")
 				.pipe(
 					map((e: Event) => (e.target as HTMLElement).scrollTop),
 					// startWith(0),
@@ -188,7 +226,7 @@ class Panel extends HTMLElement {
 		setTimeout(() => {
 			this.contentTimeoutElapsed = true;
 			this.render();
-		}, 400);
+		}, 200);
 
 		this.connected = true;
 		this.render();
@@ -205,14 +243,26 @@ class Panel extends HTMLElement {
 			"#panel-title-content",
 		);
 
-		if (this.contentTimeoutElapsed && isLoaded(this.loading)) {
-			panelContent.style.visibility = "visible";
-			panelContent.style.opacity = "1";
-			panel.style.overflow = "auto";
+		const panelFooterWrapper: HTMLElement = getElement(shadowRoot, "#panel-footer-wrapper");
+		const footerSlot: HTMLSlotElement | null = shadowRoot.querySelector('slot[name="footer"]');
+
+		// Vérifier si le slot footer a du contenu assigné
+		if (footerSlot && footerSlot.assignedElements().length > 0) {
+			panelFooterWrapper.style.display = "flex";
+			panelContent.style.paddingBottom = "5.8rem";
+			panelContent.style.mask = "linear-gradient(0deg,rgba(255, 255, 255, 0) 4.5rem, rgba(0, 0, 0, 1) 7rem)";
 		} else {
-			panelContent.style.visibility = "collapse";
+			panelFooterWrapper.style.display = "none";
+			panelContent.style.paddingBottom = "2.5rem";
+			panelContent.style.mask = "none";
+		}
+
+		if (this.contentTimeoutElapsed && isLoaded(this.loading)) {
+			panelContent.style.opacity = "1";
+			panelContent.style.overflow = "auto";
+		} else {
 			panelContent.style.opacity = "0";
-			panel.style.overflow = "hidden";
+			panelContent.style.overflow = "hidden";
 		}
 
 		panelLoading.style.width = `${this.loading}%`;
@@ -227,10 +277,8 @@ class Panel extends HTMLElement {
 			setTimeout(() => {
 				panelTitle.style.opacity = "1";
 				panelTitleContent.innerHTML = this.getAttribute("panel-title") || "";
-				panelContent.style.paddingTop = "2.5rem";
 			}, 10);
 		} else {
-			panelContent.style.paddingTop = "inherit";
 			panelTitle.style.opacity = "0";
 		}
 	}

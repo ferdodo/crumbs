@@ -1,6 +1,6 @@
 import htm from "htm/mini";
 import h from "hyperscript";
-import { type Subscription, fromEvent } from "rxjs";
+import { type Subscription, fromEvent, map, debounceTime } from "rxjs";
 import { createTemplate, getShadowRoot } from "../utils";
 
 const html = htm.bind(h);
@@ -21,8 +21,9 @@ const template = createTemplate(html`
 		}
 
 		.selected-title {
-			background: linear-gradient(0deg, rgba(255, 255, 255, 0.46) 0%, rgba(255, 255, 255, 0.44) 100%);
+			background: rgba(255, 255, 255, 0.45);
 			border-radius: 0.3rem;
+			animation: fadeInBackground 0.2s ease-in-out;
 		}
 
 		#navbar {
@@ -33,6 +34,7 @@ const template = createTemplate(html`
 			box-shadow: 2px 10px 50px 5px rgba(26, 25, 25, 0.47);
 			margin: 1rem;
 			padding: 1rem;
+
 			/*backdrop-filter: blur(0.3rem);*/
 
 			& > div {
@@ -43,6 +45,8 @@ const template = createTemplate(html`
 				cursor: pointer;
 				width: max-content;
 				user-select: none;
+				padding-bottom: 0;
+				padding-top: 0;
 			}
 		}
 
@@ -104,6 +108,19 @@ const template = createTemplate(html`
 			display: grid;
 			grid-template-rows: 1fr auto;
 			height: 100%;
+		}
+
+		.nav-title-wrapper {
+			min-height: 3.5rem;
+		}
+
+		@keyframes fadeInBackground {
+			from {
+				background: rgba(255, 255, 255, 0.01);
+			}
+			to {
+				background: rgba(255, 255, 255, 0.45);
+			}
 		}
 	</style>
 
@@ -172,7 +189,7 @@ class Nav extends HTMLElement {
 			}
 
 			if (slotName.startsWith("title-")) {
-				const slot = html`<div id=${slotName}> <crumbs-p> <slot name=${slotName}></slot> </crumbs-p> </div>`;
+				const slot = html`<div id=${slotName} className="nav-title-wrapper"> <span> <slot name=${slotName}></slot> </span> </div>`;
 
 				if (slot instanceof Element) {
 					navbar.appendChild(slot);
@@ -192,9 +209,6 @@ class Nav extends HTMLElement {
 									block: "nearest",
 									inline: "center"
 								});
-
-								this.selected = Number.parseInt(slotName.split('-')[1]);
-								this.render();
 							}
 						})
 					)
@@ -202,7 +216,7 @@ class Nav extends HTMLElement {
 			}
 
 			if (slotName.startsWith("navigation-toggle")) {
-				const slot = html`<div id=${slotName}> <crumbs-p> <slot name=${slotName}></slot> </crumbs-p> </div>`;
+				const slot = html`<div id=${slotName} className="nav-title-wrapper"> <span> <slot name=${slotName}></slot> </span> </div>`;
 
 				if (slot instanceof Element) {
 					navbar.appendChild(slot);
@@ -225,6 +239,42 @@ class Nav extends HTMLElement {
 			}
 		}
 
+		// Ajouter un listener sur l'événement scroll pour mettre à jour l'élément sélectionné
+		this.subscriptions.push(
+			fromEvent(content, "scroll")
+				.pipe(
+					map(() => {
+						const scrollLeft = content.scrollLeft;
+						const clientWidth = content.clientWidth;
+						const visibleIndex = Math.round(scrollLeft / clientWidth) + 1;
+						
+						// Vérifier que l'index est valide
+						const contentSlots = Array.from(content.children).filter(
+							(child) => child.id && child.id.startsWith("content-")
+						);
+						if (visibleIndex >= 1 && visibleIndex <= contentSlots.length) {
+							return visibleIndex;
+						}
+						return null;
+					})
+				)
+				.subscribe((visibleIndex) => {
+					if (!this.navOpen && visibleIndex !== null) {
+						this.selected = visibleIndex;
+						this.render();
+					}
+				})
+		);
+
+		// Listen for window resize to re-snap the content
+		this.subscriptions.push(
+			fromEvent(window, "resize")
+				.pipe(debounceTime(200)) // Debounce the resize event by 200ms
+				.subscribe(() => {
+					this._handleResize();
+				})
+		);
+
 		this.render();
 	}
 
@@ -244,7 +294,7 @@ class Nav extends HTMLElement {
 		navbar.style.visibility = this.navOpen ? "hidden": "visible";
 
 		[...navbar.children].forEach((title) => {
-			const id = Number.parseInt(title.id.split('-')[1]);
+			const id = Number.parseInt(title.id.split('-')[1], 10);
 
 			if (id === this.selected) {
 				if (title instanceof HTMLElement) {
@@ -297,6 +347,48 @@ class Nav extends HTMLElement {
 		content.style.willChange = "initial";
 	}
 
+	private _handleResize(): void {
+		const shadowRoot = getShadowRoot(this);
+		const content: HTMLElement | null = shadowRoot.querySelector("#content");
+		
+		if (!content) {
+			return;
+		}
+
+		const maxScrollLeft = content.scrollWidth - content.clientWidth;
+		let scrollProgress = 0;
+		if (maxScrollLeft > 0) {
+			scrollProgress = content.scrollLeft / maxScrollLeft;
+		}
+
+		const navbar: HTMLElement | null = shadowRoot.querySelector("#navbar");
+		let titleSlotCount = 0;
+		if (navbar instanceof HTMLElement) {
+			titleSlotCount = Array.from(navbar.children).filter(
+				(child) => child.id && child.id.startsWith("title-")
+			).length;
+		}
+
+		// Calculate the intended scrollLeft for the currently selected item
+		const intendedScrollLeft = (this.selected - 1) * content.clientWidth;
+		const tolerance = 1; // Small tolerance for floating point comparisons
+
+		const isClosestSlotLeft = content.scrollLeft < intendedScrollLeft - tolerance;
+		const isClosestSlotRight = content.scrollLeft > intendedScrollLeft + tolerance;
+
+		if (this.selected >= 1 && this.selected <= titleSlotCount) {
+			if (isClosestSlotLeft) {
+				content.scrollBy(1, 0);
+			} else if (isClosestSlotRight) {
+				content.scrollBy(-1, 0);
+			} else {
+				content.scrollBy(1, 0);
+			}
+		} else {
+			content.scrollBy(1, 0);
+		}
+	}
+
 	disconnectedCallback() {
 		for (const subscription of this.subscriptions) {
 			subscription.unsubscribe();
@@ -315,3 +407,11 @@ class Nav extends HTMLElement {
 }
 
 customElements.define(tagName, Nav);
+
+export async function defineNavCustomElement() {
+	if (customElements.get(tagName) === undefined) {
+		customElements.define(tagName, Nav);
+	}
+
+	await customElements.whenDefined(tagName);
+}
