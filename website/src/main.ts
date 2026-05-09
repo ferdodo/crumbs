@@ -11,6 +11,7 @@ import {
 	DemoInput,
 	DemoP,
 	DemoPanel,
+	DemoSwitch,
 	DemoTabs,
 	GettingStarted,
 	Personalization
@@ -51,7 +52,8 @@ function Main() {
 			<${DemoInput} order=${6}><//>
 			<${DemoTabs} order=${7}><//>
 			<${DemoButton} order=${8}><//>
-			<${DemoNav} order=${9}><//>
+			<${DemoSwitch} order=${9}><//>
+			<${DemoNav} order=${10}><//>
 			<span slot="navigation-toggle"> :: </span>
 		</crumbs-nav>
 	`;

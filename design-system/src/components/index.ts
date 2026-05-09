@@ -6,3 +6,4 @@ import "./button";
 import "./nav";
 import "./frame";
 import "./new-content-indicator";
+import "./switch";
