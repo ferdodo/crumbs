@@ -75,7 +75,7 @@ const template = createTemplate(html`
 		}
 
 		.switch input[type="checkbox"]:checked ~ .toggle {
-			background-color:rgba(255, 255, 255, 0.62);
+			background-color:#4c94ff;
 		}
 
 		.switch input[type="checkbox"]:checked ~ .thumb {
