@@ -1,6 +1,6 @@
 {
 	"name": "crumbs-design-system",
-	"version": "1.5.0",
+	"version": "1.6.0",
 	"description": "A web component library",
 	"Author": "Thomas Riffard",
 	"license": "MIT",
@@ -8,11 +8,18 @@
 		"type": "git",
 		"url": "git+https://github.com/ferdodo/crumbs.git"
 	},
-	"keywords": ["web-components", "design-system", "ui-library"],
+	"keywords": [
+		"web-components",
+		"design-system",
+		"ui-library"
+	],
 	"type": "module",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
-	"files": ["package.json", "dist"],
+	"files": [
+		"package.json",
+		"dist"
+	],
 	"scripts": {
 		"build": "tsc --noCheck",
 		"typecheck": "tsc --noEmit",
