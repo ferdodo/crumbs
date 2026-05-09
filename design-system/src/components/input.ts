@@ -10,6 +10,7 @@ declare global {
 		export interface IntrinsicElements {
 			[tagName]: {
 				value: string;
+				placeholder?: string;
 			};
 		}
 	}
@@ -48,6 +49,10 @@ const template = createTemplate(html`
 		input:focus, input:focus-visible {
 			outline: none;
 		}
+
+		input::placeholder {
+			opacity: 0.6;
+		}
 	</style>
 
 	<input type="text"/>
@@ -55,7 +60,7 @@ const template = createTemplate(html`
 
 class Input extends HTMLElement {
 	static get observedAttributes() {
-		return ["value"];
+		return ["value", "placeholder"];
 	}
 
 	async connectedCallback() {
@@ -65,19 +70,29 @@ class Input extends HTMLElement {
 		shadowRoot.appendChild(clonedTemplate);
 		const input = getElement(shadowRoot, "input");
 		const value = this.getAttribute("value");
+		const placeholder = this.getAttribute("placeholder");
 
-		if (input instanceof HTMLInputElement && value) {
-			input.value = value;
+		if (input instanceof HTMLInputElement) {
+			if (value) {
+				input.value = value;
+			}
+			if (placeholder) {
+				input.placeholder = placeholder;
+			}
 		}
 	}
 
 	attributeChangedCallback(name: string, _oldValue: string, newValue: string) {
-		if (name === "value" && this.shadowRoot) {
+		if (this.shadowRoot) {
 			const shadowRoot = getShadowRoot(this);
 			const input = getElement(shadowRoot, "input");
 
 			if (input instanceof HTMLInputElement) {
-				input.value = newValue;
+				if (name === "value") {
+					input.value = newValue;
+				} else if (name === "placeholder") {
+					input.placeholder = newValue;
+				}
 			}
 		}
 	}
