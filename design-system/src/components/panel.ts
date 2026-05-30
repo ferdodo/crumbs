@@ -161,7 +161,9 @@ const template = createTemplate(html`
 		</div>
 
 		<div id="panel-footer-wrapper">
-			<slot name="footer"></slot>
+			<div id="panel-footer-content">
+				<slot name="footer"></slot>
+			</div>
 		</div>
 
 		<div id="panel-title-container">
@@ -181,6 +183,8 @@ class Panel extends HTMLElement {
 	loading = "100";
 	scrolled = false;
 	scrolledSubscription: Subscription | null = null;
+	footerResizeObserver: ResizeObserver | null = null;
+	footerHeight = 0;
 
 	static get observedAttributes() {
 		return ["panel-loading", "panel-title"];
@@ -220,6 +224,13 @@ class Panel extends HTMLElement {
 					this.render();
 				});
 
+			const panelFooterContent: HTMLElement = getElement(shadowRoot, "#panel-footer-content");
+			this.footerResizeObserver = new ResizeObserver(() => {
+				this.footerHeight = panelFooterContent.offsetHeight;
+				this.render();
+			});
+			this.footerResizeObserver.observe(panelFooterContent);
+
 			this.render();
 		}, 10);
 
@@ -246,11 +257,16 @@ class Panel extends HTMLElement {
 		const panelFooterWrapper: HTMLElement = getElement(shadowRoot, "#panel-footer-wrapper");
 		const footerSlot: HTMLSlotElement | null = shadowRoot.querySelector('slot[name="footer"]');
 
-		// Vérifier si le slot footer a du contenu assigné
 		if (footerSlot && footerSlot.assignedElements().length > 0) {
 			panelFooterWrapper.style.display = "flex";
-			panelContent.style.paddingBottom = "5.8rem";
-			panelContent.style.mask = "linear-gradient(0deg,rgba(255, 255, 255, 0) 4.5rem, rgba(0, 0, 0, 1) 7rem)";
+
+			if (this.footerHeight > 0) {
+				const footerHeightRem = this.footerHeight / 16 + 1.7;
+				const gradientEnd = footerHeightRem + 2.5;
+
+				panelContent.style.paddingBottom = `${footerHeightRem + 1.5}rem`;
+				panelContent.style.mask = `linear-gradient(0deg,rgba(255, 255, 255, 0) ${footerHeightRem}rem, rgba(0, 0, 0, 1) ${gradientEnd}rem)`;
+			}
 		} else {
 			panelFooterWrapper.style.display = "none";
 			panelContent.style.paddingBottom = "2.5rem";
@@ -299,6 +315,7 @@ class Panel extends HTMLElement {
 
 	disconnectedCallback() {
 		this.scrolledSubscription?.unsubscribe();
+		this.footerResizeObserver?.disconnect();
 	}
 }
 

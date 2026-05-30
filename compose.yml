@@ -60,7 +60,7 @@ services:
       additional_contexts:
         crumbs-design-system: service:design-system
     ports:
-      - "28005:5173"
+      - "28005:28005"
     develop:
       watch:
         - action: sync

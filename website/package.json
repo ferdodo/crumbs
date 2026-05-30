@@ -3,7 +3,7 @@
 		"build": "vite build",
 		"typecheck": "tsc --noEmit",
 		"lint": "biome ci src",
-		"start": "vite --host"
+		"start": "vite --host --port 28005"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.8.2",

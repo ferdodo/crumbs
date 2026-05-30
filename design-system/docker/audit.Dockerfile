@@ -1,2 +1,2 @@
 FROM crumbs-design-system
-RUN npm audit --audit-level=low
+RUN npm audit --audit-level=critical
